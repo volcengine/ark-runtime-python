@@ -1,0 +1,28 @@
+# Copyright (c) 2025 ByteDance Ltd. and/or its affiliates.
+# SPDX-License-Identifier: Apache-2.0
+# License text: https://github.com/volcengine/ark-runtime-python/blob/main/LICENSE
+
+from __future__ import annotations
+
+from typing_extensions import TypeAlias
+
+from ....types.chat import (
+    ParsedChatCompletion,
+    ParsedChatCompletionMessage,
+    ParsedChoice,
+)
+
+ParsedChatCompletionSnapshot: TypeAlias = ParsedChatCompletion[object]
+"""Snapshot type representing an in-progress accumulation of
+a `ParsedChatCompletion` object.
+"""
+
+ParsedChatCompletionMessageSnapshot: TypeAlias = ParsedChatCompletionMessage[object]
+"""Snapshot type representing an in-progress accumulation of
+a `ParsedChatCompletionMessage` object.
+
+If the content has been fully accumulated, the `.parsed` content will be
+the `response_format` instance, otherwise it'll be the raw JSON parsed version.
+"""
+
+ParsedChoiceSnapshot: TypeAlias = ParsedChoice[object]

@@ -1,0 +1,20 @@
+name: python-lint
+
+trigger:
+  change:
+    paths:
+      - "src/arkruntime/**"
+      - "pyproject.toml"
+
+jobs:
+  lint:
+    image: python:3.12-slim
+    runs-on:
+      cluster:
+    steps:
+      - name: ruff lint and format check
+        commands:
+          - pip install --quiet uv
+          - uv sync --frozen --no-progress
+          - uv run ruff check src/
+          - uv run ruff format --check src/
