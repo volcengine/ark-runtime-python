@@ -1,0 +1,79 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "arkruntime"
+version = "0.1.0"
+description = "Ark runtime SDK for Python"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Volcengine" }]
+dependencies = [
+  "httpx>=0.23.0",
+  "pydantic>=2.0",
+  "anyio>=3.5.0,<5",
+  "sniffio",
+  "typing-extensions>=4.7",
+  "distro>=1.7.0",
+  # Required by the AK/SK auth path in _client.py (StsTokenManager,
+  # volcenginesdkcore.Configuration / rest.ApiException). Imported
+  # unconditionally at module load, so it must be declared here.
+  "volcengine-python-sdk>=5.0.20",
+]
+
+[project.urls]
+Homepage = "https://github.com/volcengine/ark-runtime-python"
+
+# Dev tools for working on this SDK (lint + test infra). Install with:
+#   uv sync                  # runtime + dev
+#   uv sync --no-dev         # runtime only
+# Live integration tests live in sdk-tests/python/.
+[dependency-groups]
+lint = [
+    "ruff>=0.5",
+]
+dev = [
+    { include-group = "lint" },
+    "pre-commit>=3.5",
+    "pytest>=8",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=5",
+    "pytest-xdist>=3",
+    "respx>=0.21",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["arkruntime*"]
+
+# ---------------------------------------------------------------------------
+# Ruff: shared lint + format config, used by both pre-commit and CI.
+# Run locally via `uv run ruff check src/` / `uv run ruff format src/`.
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 120
+target-version = "py38"
+extend-exclude = [
+    # Generated types are reformatted by codegen; don't double-edit.
+    "src/arkruntime/types/**/*.py",
+]
+
+[tool.ruff.lint]
+# Start strict on real bugs (pyflakes) + import hygiene; keep style lenient.
+select = ["F", "E", "W", "I"]
+ignore = [
+    "E501",   # line-too-long; ruff format handles wrapping
+    "E712",   # `x == True` patterns in upstream-derived framework code
+    "E721",   # type(x) == y patterns in upstream-derived framework code
+    "E731",   # lambda assignment
+    "E741",   # ambiguous names (intentional in `_models.py`)
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Re-export modules legitimately import names just to re-export them.
+"src/arkruntime/__init__.py" = ["F401"]
+"src/arkruntime/_utils/__init__.py" = ["F401"]
+"src/arkruntime/common/__init__.py" = ["F401"]
+"src/arkruntime/resources/__init__.py" = ["F401"]

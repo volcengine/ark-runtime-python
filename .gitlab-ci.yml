@@ -1,0 +1,35 @@
+# GitLab CI for ark-runtime-python.
+#
+# Single `lint` stage that runs ruff check + ruff format --check against
+# the same `[tool.ruff]` config the local pre-commit hook uses. This is
+# the safety net in case someone bypasses the local hook (e.g.
+# `git commit --no-verify`) — the merge-request pipeline blocks on this
+# job before the MR can be merged.
+#
+# Live integration tests live in sdk-tests/python and are not run from
+# this pipeline (they need ARK_API_KEY + endpoint IDs that don't belong
+# in this repo's CI variables).
+
+stages:
+  - lint
+
+variables:
+  # Force colors + non-interactive
+  PY_COLORS: "1"
+  UV_NO_PROGRESS: "1"
+
+default:
+  image: python:3.12-slim
+  before_script:
+    - pip install --quiet uv
+    - uv sync --frozen --no-progress --only-group lint
+
+ruff:
+  stage: lint
+  script:
+    - uv run --frozen --only-group lint ruff check src/
+    - uv run --frozen --only-group lint ruff format --check src/
+  rules:
+    # Run on every MR and on every push to main.
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
