@@ -32,7 +32,7 @@ from ...types.file.file_create_request_param import FileCreateRequestParam
 from ...types.file.file_deleted import FileDeleted
 from ...types.file.file_object import FileObject
 from ...types.file.preprocess_configs_param import PreprocessConfigsParam
-from ...types.file.purpose_param import PurposeParam
+from ...types.file.purpose import Purpose
 from ...types.file.tos_storage_param import TosStorageParam
 
 # AUTOGEN-END create-imports
@@ -60,7 +60,7 @@ class Files(SyncAPIResource):
         *,
         file: FileTypes,
         # AUTOGEN-START create-kwargs
-        purpose: PurposeParam,
+        purpose: Purpose,
         preprocess_configs: Optional[PreprocessConfigsParam] = None,
         expire_at: Optional[int] = None,
         url: Optional[str] = None,
@@ -137,7 +137,7 @@ class Files(SyncAPIResource):
         self,
         *,
         # AUTOGEN-START list-kwargs
-        purpose: Optional[Literal["user_data"]] = None,
+        purpose: Optional[Literal["user_data", "agent"]] = None,
         after: Optional[str] = None,
         limit: Optional[int] = None,
         order: Optional[Literal["asc", "desc"]] = None,
@@ -227,7 +227,7 @@ class AsyncFiles(AsyncAPIResource):
         *,
         file: FileTypes,
         # AUTOGEN-START create-kwargs
-        purpose: PurposeParam,
+        purpose: Purpose,
         preprocess_configs: Optional[PreprocessConfigsParam] = None,
         expire_at: Optional[int] = None,
         url: Optional[str] = None,
@@ -291,7 +291,7 @@ class AsyncFiles(AsyncAPIResource):
         self,
         *,
         # AUTOGEN-START list-kwargs
-        purpose: Optional[Literal["user_data"]] = None,
+        purpose: Optional[Literal["user_data", "agent"]] = None,
         after: Optional[str] = None,
         limit: Optional[int] = None,
         order: Optional[Literal["asc", "desc"]] = None,

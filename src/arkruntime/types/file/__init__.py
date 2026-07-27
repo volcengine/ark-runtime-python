@@ -33,7 +33,6 @@ __all__ = [
 ]
 from .file_create_request_param import FileCreateRequestParam
 from .preprocess_configs_param import PreprocessConfigsParam
-from .purpose_param import PurposeParam
 from .tos_storage_param import TosStorageParam
 from .video_param import VideoParam
 
