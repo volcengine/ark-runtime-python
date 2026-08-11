@@ -6,11 +6,13 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from enum import Enum
 
-from typing_extensions import TypeAliasType
 
-Purpose = TypeAliasType("Purpose", Literal["user_data"])
-"""
-The intended purpose of an uploaded file.
-"""
+class Purpose(str, Enum):
+    """
+    The intended purpose of an uploaded file.
+    """
+
+    user_data = "user_data"
+    agent = "agent"

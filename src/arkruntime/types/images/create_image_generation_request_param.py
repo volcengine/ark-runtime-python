@@ -46,7 +46,7 @@ class CreateImageGenerationRequestParam(TypedDict, total=False):
     """Classifier-free guidance scale for reference images (edit / R2I)."""
 
     size: Optional[str]
-    """Output size hint (e.g. `1024x1024`, `2K`, `adaptive`)."""
+    """Output size hint (e.g. `1024x1024`, `1K`, `2K`, or `auto`). `auto` is supported for layer decomposition."""
 
     watermark: Optional[bool]
     """Embed a watermark in the generated image."""

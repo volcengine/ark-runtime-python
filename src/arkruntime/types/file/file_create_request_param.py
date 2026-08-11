@@ -11,12 +11,12 @@ from typing import Optional
 from typing_extensions import Required, TypedDict
 
 from .preprocess_configs_param import PreprocessConfigsParam
-from .purpose_param import PurposeParam
+from .purpose import Purpose
 from .tos_storage_param import TosStorageParam
 
 
 class FileCreateRequestParam(TypedDict, total=False):
-    purpose: Required[PurposeParam]
+    purpose: Required[Purpose]
     """The intended purpose of the uploaded file."""
 
     preprocess_configs: Optional[PreprocessConfigsParam]
