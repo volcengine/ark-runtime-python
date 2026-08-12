@@ -15,7 +15,7 @@ get IDE completion + pyright/mypy field-name checks. Mirrors the Go SDK's
 examples/sessions_loop/main.go 1:1.
 
     export ARK_API_KEY=...
-    export ARK_MODEL_ID=doubao-seed-2-1-pro
+    export ARK_MODEL_ID=doubao-seed-2-1-pro-260628
     python examples/sessions_loop.py
 """
 

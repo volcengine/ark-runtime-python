@@ -28,7 +28,7 @@ async def main():
     # ---------- 第 1 轮 ----------
     # 说明：开启 caching，store=True 表示把对话存储在服务端，以便后续引用
     stream = await client.responses.create(
-        model="doubao-seed-1-6",
+        model="doubao-seed-2-1-pro-260628",
         input=[
             {
                 "role": "system",
@@ -61,7 +61,7 @@ async def main():
     # ---------- 第 2 轮 ----------
     # 说明：通过 previous_response_id 关联上一轮的上下文
     stream = await client.responses.create(
-        model="doubao-seed-1-6",
+        model="doubao-seed-2-1-pro-260628",
         previous_response_id=response_id,
         input=[
             {"role": "user", "content": "上一轮对话里图里的内容是"},
@@ -83,7 +83,7 @@ async def main():
     # ---------- 第 1 轮 ----------
     # 用户询问北京天气，模型会触发工具调用
     stream = await client.responses.create(
-        model="doubao-seed-1-6",
+        model="doubao-seed-2-1-pro-260628",
         input=[
             {"role": "user", "content": "请问北京今天天气怎么样"},
         ],
@@ -126,7 +126,7 @@ async def main():
     # ---------- 第 2 轮 ----------
     # 把函数返回结果传回模型，让它继续生成最终回答
     stream = await client.responses.create(
-        model="doubao-seed-1-6",
+        model="doubao-seed-2-1-pro-260628",
         previous_response_id=response_id,
         input=[
             {
@@ -149,7 +149,7 @@ async def main():
     # ==========================================================
     print("Example 3: Use responses API for web search")
     stream = await client.responses.create(
-        model="doubao-seed-1-6",
+        model="doubao-seed-2-1-pro-260628",
         input=[
             {"role": "user", "content": "今天的新闻"},
         ],
@@ -178,7 +178,7 @@ async def main():
     # ---------- 第 1 轮 ----------
     # 用户询问repo信息，模型会触发mcp工具调用
     stream = await client.responses.create(
-        model="doubao-seed-1-6",
+        model="doubao-seed-2-1-pro-260628",
         input=[
             {
                 "role": "user",
@@ -213,7 +213,7 @@ async def main():
     # ---------- 第 2 轮 ----------
     # 用户同意mcp工具调用，模型会继续生成最终回答
     stream = await client.responses.create(
-        model="doubao-seed-1-6",
+        model="doubao-seed-2-1-pro-260628",
         input=[
             {
                 "type": "mcp_approval_response",

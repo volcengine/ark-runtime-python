@@ -19,7 +19,7 @@ async def main():
     # ---------- 第 1 轮 ----------
     # 选择一种feature 测试
     stream = await client.responses.create(
-        model="doubao-seed-1-6",
+        model="doubao-seed-2-1-pro-260628",
         input=[
             {"role": "user", "content": "你好请你介绍你自己"},
         ],
@@ -48,7 +48,7 @@ async def main():
     # ---------- 第 2 轮 ----------
     # 说明：通过 previous_response_id 关联上一轮的上下文
     stream = await client.responses.create(
-        model="doubao-seed-1-6",
+        model="doubao-seed-2-1-pro-260628",
         previous_response_id=response_id,
         input=[
             {"role": "user", "content": "上一轮对话里我们说了什么"},

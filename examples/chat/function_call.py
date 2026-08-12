@@ -13,7 +13,7 @@ from arkruntime import Ark
 # Authentication
 # 1.If you authorize your endpoint using an API key, you can set your api key to environment variable "ARK_API_KEY"
 client = Ark()
-MODEL = os.environ.get("ENDPOINT_ID", "doubao-seed-1-6")
+MODEL = os.environ.get("ENDPOINT_ID", "doubao-seed-2-1-pro-260628")
 
 WEATHER_TOOL = {
     "type": "function",

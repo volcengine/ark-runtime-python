@@ -28,7 +28,7 @@ from arkruntime import Ark
 client = Ark()
 
 response = client.responses.create(
-    model=os.environ.get("ARK_MODEL", "doubao-seed-1-6"),
+    model=os.environ.get("ARK_MODEL", "doubao-seed-2-1-pro-260628"),
     input="Explain how large language models work in three sentences.",
 )
 print(response.output_text)
@@ -43,7 +43,7 @@ from arkruntime import Ark
 client = Ark()
 
 completion = client.chat.completions.create(
-    model=os.environ.get("ARK_MODEL", "doubao-seed-1-6"),
+    model=os.environ.get("ARK_MODEL", "doubao-seed-2-1-pro-260628"),
     messages=[
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user", "content": "Write a haiku about programming."},
@@ -65,7 +65,7 @@ from arkruntime import Ark
 client = Ark()
 
 stream = client.responses.create(
-    model=os.environ.get("ARK_MODEL", "doubao-seed-1-6"),
+    model=os.environ.get("ARK_MODEL", "doubao-seed-2-1-pro-260628"),
     input="Count from 1 to 10 slowly.",
     stream=True,
 )
@@ -82,7 +82,7 @@ from arkruntime import Ark
 client = Ark()
 
 stream = client.chat.completions.create(
-    model=os.environ.get("ARK_MODEL", "doubao-seed-1-6"),
+    model=os.environ.get("ARK_MODEL", "doubao-seed-2-1-pro-260628"),
     messages=[{"role": "user", "content": "Count from 1 to 10 slowly."}],
     stream=True,
 )
@@ -104,7 +104,7 @@ client = AsyncArk()
 
 async def main():
     response = await client.responses.create(
-        model=os.environ.get("ARK_MODEL", "doubao-seed-1-6"),
+        model=os.environ.get("ARK_MODEL", "doubao-seed-2-1-pro-260628"),
         input="Explain quantum computing briefly.",
     )
     print(response.output_text)
@@ -123,7 +123,7 @@ from arkruntime import Ark
 client = Ark()
 
 completion = client.chat.completions.create(
-    model=os.environ.get("ARK_MODEL", "doubao-seed-1-6"),
+    model=os.environ.get("ARK_MODEL", "doubao-seed-2-1-pro-260628"),
     messages=[
         {
             "role": "user",
@@ -164,7 +164,7 @@ tools = [
 ]
 
 completion = client.chat.completions.create(
-    model=os.environ.get("ARK_MODEL", "doubao-seed-1-6"),
+    model=os.environ.get("ARK_MODEL", "doubao-seed-2-1-pro-260628"),
     messages=[{"role": "user", "content": "What is the weather in Beijing?"}],
     tools=tools,
 )
@@ -205,7 +205,7 @@ client = Ark()
 
 try:
     client.chat.completions.create(
-        model="doubao-seed-1-6",
+        model="doubao-seed-2-1-pro-260628",
         messages=[{"role": "user", "content": "Hello"}],
     )
 except ArkRateLimitError:
@@ -253,7 +253,7 @@ Per-request overrides are also supported:
 
 ```python
 client.chat.completions.create(
-    model="doubao-seed-1-6",
+    model="doubao-seed-2-1-pro-260628",
     messages=[{"role": "user", "content": "Hello"}],
     timeout=30.0,
 )
@@ -269,7 +269,7 @@ from arkruntime import Ark
 client = Ark(timeout=24 * 3600)
 
 result = client.batch.chat.completions.create(
-    model="doubao-seed-1-6",
+    model="doubao-seed-2-1-pro-260628",
     messages=[{"role": "user", "content": "Hello"}],
 )
 print(result)

@@ -61,7 +61,7 @@ async def main() -> None:
     # ==========================================================
     print("\nTurn 1: ask the model to analyze the video frame-by-frame")
     stream = await client.responses.create(
-        model="doubao-seed-1-6",
+        model="doubao-seed-2-1-pro-260628",
         input=[
             {"role": "system", "content": "你是豆包，是由字节跳动开发的 AI 人工智能助手"},
             {
@@ -87,7 +87,7 @@ async def main() -> None:
     # ==========================================================
     print("\nTurn 2: follow-up referencing prior turn's response")
     stream = await client.responses.create(
-        model="doubao-seed-1-6",
+        model="doubao-seed-2-1-pro-260628",
         previous_response_id=response_id,
         input=[
             {"role": "user", "content": "上一轮对话里视频里的内容是"},
