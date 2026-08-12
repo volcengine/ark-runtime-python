@@ -24,10 +24,6 @@ class PromptTokensDetails(BaseModel):
     """
     Prompt tokens consumed by image inputs.
     """
-    provisioned_tokens: Optional[int] = None
-    """
-    Prompt tokens billed against a provisioned-throughput allocation.
-    """
     audio_tokens: Optional[int] = None
     """
     Prompt tokens consumed by audio inputs.

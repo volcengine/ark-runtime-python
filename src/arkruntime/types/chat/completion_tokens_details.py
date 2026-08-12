@@ -6,8 +6,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 from arkruntime._models import BaseModel
 
 
@@ -15,9 +13,4 @@ class CompletionTokensDetails(BaseModel):
     reasoning_tokens: int
     """
     Reasoning tokens emitted by the model.
-    """
-    provisioned_tokens: Optional[int] = None
-    """
-    Completion tokens billed against a provisioned-throughput
-    allocation.
     """
