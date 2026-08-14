@@ -14,6 +14,10 @@ from .tool_usage import ToolUsage
 
 
 class Usage(BaseModel):
+    input_images: int
+    """
+    Number of reference images supplied by the client.
+    """
     generated_images: int
     """
     Number of images returned in `data`.

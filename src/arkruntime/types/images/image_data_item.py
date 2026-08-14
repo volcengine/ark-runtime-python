@@ -12,6 +12,7 @@ from arkruntime._models import BaseModel
 
 from .bounding_box import BoundingBox
 from .image_error import ImageError
+from .output_format import OutputFormat
 
 
 class ImageDataItem(BaseModel):
@@ -34,6 +35,10 @@ class ImageDataItem(BaseModel):
     error: Optional[ImageError] = None
     """
     Per-image failure (set when this slot failed while others succeeded).
+    """
+    output_format: Optional[OutputFormat] = None
+    """
+    Actual container/codec used for this image.
     """
     z_index: Optional[int] = None
     """
