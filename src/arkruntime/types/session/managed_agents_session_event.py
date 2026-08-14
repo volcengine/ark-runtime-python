@@ -15,12 +15,14 @@ class ManagedAgentsSessionEvent(BaseModel):
     """
     会话流上的一个事件。`type` 是判别式，其余字段随 type 变化。SDK 层建议
     把这个模型作为出流事件的公共 envelope；具体 variant 的 payload 可以在
-    消费侧按 `type` 再解构。
+    消费侧按 `type` 再解构。`event_start` / `event_delta` 的强类型结构见
+    `ManagedAgentsStreamPreviewEvent`；这两种瞬时预览帧不携带 `id` /
+    `processed_at`。
     """
 
     type: str
     """
-    事件类型判别式，例如 `agent.message` / `span.outcome_evaluation_end` / `session.status_idle`。
+    事件类型判别式，例如 `agent.message` / `event_start` / `event_delta` / `session.status_idle`。
     """
     id: Optional[str] = None
     """
