@@ -3,7 +3,7 @@ import os
 from arkruntime import Ark
 
 client = Ark()
-MODEL = os.environ.get("ENDPOINT_ID", "doubao-seed-1-6")
+MODEL = os.environ.get("ENDPOINT_ID", "doubao-seed-2-1-pro-260628")
 
 print("----- tokenization request -----")
 resp = client.tokenization.create(

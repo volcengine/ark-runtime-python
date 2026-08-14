@@ -6,7 +6,7 @@ from arkruntime import Ark
 # 1.If you authorize your endpoint using an API key, you can set your api key to environment variable "ARK_API_KEY"
 # or specify api key by Ark(api_key="${YOUR_API_KEY}").
 client = Ark()
-MODEL = os.environ.get("ENDPOINT_ID", "doubao-seed-1-6")
+MODEL = os.environ.get("ENDPOINT_ID", "doubao-seed-2-1-pro-260628")
 
 # Image input:
 response = client.chat.completions.create(

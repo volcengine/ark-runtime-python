@@ -3,7 +3,7 @@
 Runs against the outward /api/v3/agents endpoint.
 
     export ARK_API_KEY=...
-    export ARK_MODEL_ID=doubao-seed-1-8-251228   # or whatever you have access to
+    export ARK_MODEL_ID=doubao-seed-2-1-pro-260628   # or whatever you have access to
     python examples/agents.py
 """
 

@@ -14,7 +14,7 @@ from arkruntime import Ark
 # To get your ak&sk, please refer to this document(https://www.volcengine.com/docs/6291/65568)
 # For more information，please check this document（https://www.volcengine.com/docs/82379/1263279）
 client = Ark()
-MODEL = os.environ.get("ENDPOINT_ID", "doubao-seed-1-6")
+MODEL = os.environ.get("ENDPOINT_ID", "doubao-seed-2-1-pro-260628")
 
 
 if __name__ == "__main__":
