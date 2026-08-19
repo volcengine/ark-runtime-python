@@ -11,6 +11,13 @@ jobs:
     image: python:3.12-slim
     runs-on:
       cluster:
+    envs:
+      # uv does not read pip.conf, so it resolves against pypi.org directly
+      # and times out from CN cluster runners. The mirror URL itself lives
+      # in Repository -> Pipeline -> Variables (PYPI_MIRROR_URL) so the
+      # internal hostname stays out of this mirrored-to-GitHub tree; pip is
+      # platform-configured and needs nothing.
+      UV_INDEX_URL: ${{PYPI_MIRROR_URL}}
     steps:
       - name: ruff lint and format check
         commands:
