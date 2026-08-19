@@ -14,9 +14,9 @@ from .tool_usage import ToolUsage
 
 
 class Usage(BaseModel):
-    input_images: int
+    input_images: Optional[int] = None
     """
-    Number of reference images supplied by the client.
+    Number of reference images supplied by the client. May be absent in responses from older services.
     """
     generated_images: int
     """

@@ -1,0 +1,94 @@
+name: Python Release
+
+# Publishes the arkruntime package to PyPI (pypi.org/project/arkruntime,
+# maintained by the volcengine account). Tags are created exclusively by
+# ark-hand after a sync PR lands on main, so a pushed v* tag is always a
+# reviewed release snapshot whose tree matches the internal source tree.
+#
+# The workflow_dispatch input allows re-publishing (or first-publishing)
+# an existing tag — e.g. when the PYPI_API_TOKEN secret was missing when
+# the tag was originally pushed. The workflow definition runs from the
+# ref the dispatch targets, while the build checks out the named tag.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to publish (must already exist, e.g. v0.2.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+# Never cancel an in-flight publish; a second dispatch for the same tag
+# should queue behind it instead of racing the upload.
+concurrency:
+  group: python-release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and publish to PyPI
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Resolve release tag
+        id: tag
+        env:
+          DISPATCH_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || '' }}
+        run: |
+          tag="${DISPATCH_TAG:-${GITHUB_REF_NAME}}"
+          case "${tag}" in
+            v[0-9]*.[0-9]*.0) ;;
+            *)
+              echo "::error::${tag} is not a release tag (expected vMAJOR.MINOR.0)"
+              exit 1
+              ;;
+          esac
+          echo "name=${tag}" >> "$GITHUB_OUTPUT"
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.tag.outputs.name }}
+
+      - name: Verify pyproject version matches tag
+        env:
+          RELEASE_TAG: ${{ steps.tag.outputs.name }}
+        run: |
+          version="${RELEASE_TAG#v}"
+          if ! grep -Eq "^version = \"${version}\"$" pyproject.toml; then
+            echo "::error::pyproject.toml version does not match tag ${RELEASE_TAG}"
+            grep -n '^version' pyproject.toml || true
+            exit 1
+          fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        run: python -m pip install --disable-pip-version-check --quiet uv
+
+      - name: Build sdist and wheel
+        run: uv build
+
+      - name: Check PyPI token
+        env:
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          if [ -z "${PYPI_API_TOKEN}" ]; then
+            echo "::error::secret PYPI_API_TOKEN is not configured on this repository"
+            exit 1
+          fi
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          attestations: false
