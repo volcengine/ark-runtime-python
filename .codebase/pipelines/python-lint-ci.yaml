@@ -5,6 +5,7 @@ trigger:
     paths:
       - "src/arkruntime/**"
       - "pyproject.toml"
+      - ".codebase/pipelines/python-lint-ci.yaml"
 
 jobs:
   lint:
@@ -12,16 +13,17 @@ jobs:
     runs-on:
       cluster:
     envs:
-      # uv does not read pip.conf, so it resolves against pypi.org directly
-      # and times out from CN cluster runners. The mirror URL itself lives
-      # in Repository -> Pipeline -> Variables (PYPI_MIRROR_URL) so the
-      # internal hostname stays out of this mirrored-to-GitHub tree; pip is
-      # platform-configured and needs nothing.
-      UV_INDEX_URL: ${{PYPI_MIRROR_URL}}
+      # Ruff is a static analyzer — it needs no project dependencies, so the
+      # lint installs only the ruff version pinned by uv.lock instead of
+      # syncing the whole venv. The full sync pulled a 34MiB dependency that
+      # stalls between cluster runners and the internal mirror (small files
+      # fly, >10MiB ones hang), making lint take 20+ minutes or never finish.
+      # The version is refreshed by `make generate` syncing uv.lock content;
+      # bump it there when the lock moves.
+      RUFF_VERSION: 0.15.14
     steps:
       - name: ruff lint and format check
         commands:
-          - pip install --quiet uv
-          - uv sync --frozen --no-progress
-          - uv run ruff check src/
-          - uv run ruff format --check src/
+          - pip install --quiet --index-url ${{PYPI_MIRROR_URL}} "ruff==${RUFF_VERSION}"
+          - ruff check src/
+          - ruff format --check src/
