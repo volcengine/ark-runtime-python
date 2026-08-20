@@ -6,10 +6,10 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Union
+from typing import Union
 
 from pydantic import Field
-from typing_extensions import TypeAliasType
+from typing_extensions import Annotated, TypeAliasType
 
 from .base64_image_source import Base64ImageSource
 from .file_image_source import FileImageSource

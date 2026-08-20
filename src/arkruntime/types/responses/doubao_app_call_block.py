@@ -6,10 +6,10 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Union
+from typing import Union
 
 from pydantic import Field
-from typing_extensions import TypeAliasType
+from typing_extensions import Annotated, TypeAliasType
 
 from .doubao_app_call_block_output_text import DoubaoAppCallBlockOutputText
 from .doubao_app_call_block_reasoning_search import DoubaoAppCallBlockReasoningSearch

@@ -6,10 +6,10 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Union
+from typing import Union
 
 from pydantic import Field
-from typing_extensions import TypeAliasType
+from typing_extensions import Annotated, TypeAliasType
 
 from .messages_content_part_image import MessagesContentPartImage
 from .messages_content_part_text import MessagesContentPartText

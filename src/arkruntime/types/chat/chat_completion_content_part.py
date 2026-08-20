@@ -6,10 +6,10 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Union
+from typing import Union
 
 from pydantic import Field
-from typing_extensions import TypeAliasType
+from typing_extensions import Annotated, TypeAliasType
 
 from .chat_completion_content_part_audio import ChatCompletionContentPartAudio
 from .chat_completion_content_part_file import ChatCompletionContentPartFile

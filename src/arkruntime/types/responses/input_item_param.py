@@ -6,7 +6,9 @@
 
 from __future__ import annotations
 
-from typing import TypeAlias, Union
+from typing import Union
+
+from typing_extensions import TypeAlias
 
 from .item_easy_message_param import ItemEasyMessageParam
 from .item_function_mcp_approval_request_param import (

@@ -6,7 +6,9 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Dict, Optional
+from typing import Dict, Optional
+
+from typing_extensions import Annotated
 
 from arkruntime._models import BaseModel
 from pydantic import Field

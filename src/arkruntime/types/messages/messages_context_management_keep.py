@@ -10,23 +10,14 @@ from typing import Literal, Union
 
 from typing_extensions import TypeAliasType
 
-from .messages_context_management_keep_all import MessagesContextManagementKeepAll
-from .messages_context_management_keep_thinking_turns import (
-    MessagesContextManagementKeepThinkingTurns,
-)
-from .messages_context_management_keep_tool_uses import (
-    MessagesContextManagementKeepToolUses,
+from .messages_context_management_keep_parameter import (
+    MessagesContextManagementKeepParameter,
 )
 
 MessagesContextManagementKeep = TypeAliasType(
     "MessagesContextManagementKeep",
-    Union[
-        Literal["all"],
-        MessagesContextManagementKeepAll,
-        MessagesContextManagementKeepThinkingTurns,
-        MessagesContextManagementKeepToolUses,
-    ],
+    Union[Literal["all"], MessagesContextManagementKeepParameter],
 )
 """
-What context to retain while applying a context-management edit.
+A literal retention mode or a typed retention parameter.
 """

@@ -6,10 +6,10 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Union
+from typing import Union
 
 from pydantic import Field
-from typing_extensions import TypeAliasType
+from typing_extensions import Annotated, TypeAliasType
 
 from .managed_agents_document_block import ManagedAgentsDocumentBlock
 from .managed_agents_image_block import ManagedAgentsImageBlock

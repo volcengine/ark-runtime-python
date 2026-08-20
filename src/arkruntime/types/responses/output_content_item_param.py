@@ -6,7 +6,9 @@
 
 from __future__ import annotations
 
-from typing import TypeAlias, Union
+from typing import Union
+
+from typing_extensions import TypeAlias
 
 from .output_content_item_reasoning_text_param import (
     OutputContentItemReasoningTextParam,
