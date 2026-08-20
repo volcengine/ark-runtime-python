@@ -6,7 +6,9 @@
 
 from __future__ import annotations
 
-from typing import TypeAlias, Union
+from typing import Union
+
+from typing_extensions import TypeAlias
 
 from .doubao_app_tool_param import DoubaoAppToolParam
 from .function_tool_param import FunctionToolParam

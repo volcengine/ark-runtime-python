@@ -6,7 +6,9 @@
 
 from __future__ import annotations
 
-from typing import List, TypeAlias, Union
+from typing import List, Union
+
+from typing_extensions import TypeAlias
 
 from .chat_completion_content_part_param import ChatCompletionContentPartParam
 

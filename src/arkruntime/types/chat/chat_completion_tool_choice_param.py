@@ -6,7 +6,9 @@
 
 from __future__ import annotations
 
-from typing import TypeAlias, Union
+from typing import Union
+
+from typing_extensions import TypeAlias
 
 from .chat_completion_named_tool_choice_param import ChatCompletionNamedToolChoiceParam
 from .tool_choice_mode import ToolChoiceMode

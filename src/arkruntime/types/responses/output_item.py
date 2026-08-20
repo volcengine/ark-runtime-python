@@ -6,10 +6,10 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Union
+from typing import Union
 
 from pydantic import Field
-from typing_extensions import TypeAliasType
+from typing_extensions import Annotated, TypeAliasType
 
 from .item_agent_tool_call import ItemAgentToolCall
 from .item_doubao_app_call import ItemDoubaoAppCall

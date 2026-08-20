@@ -6,7 +6,9 @@
 
 from __future__ import annotations
 
-from typing import TypeAlias, Union
+from typing import Union
+
+from typing_extensions import TypeAlias
 
 from .content_item_audio_param import ContentItemAudioParam
 from .content_item_file_param import ContentItemFileParam

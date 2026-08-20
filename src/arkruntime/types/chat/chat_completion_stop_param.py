@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
-from typing import List, TypeAlias, Union
+from typing import List, Union
+
+from typing_extensions import TypeAlias
 
 ChatCompletionStopParam: TypeAlias = Union[str, List[str]]

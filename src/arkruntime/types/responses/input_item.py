@@ -6,10 +6,10 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Union
+from typing import Union
 
 from pydantic import Field
-from typing_extensions import TypeAliasType
+from typing_extensions import Annotated, TypeAliasType
 
 from .item_easy_message import ItemEasyMessage
 from .item_function_mcp_approval_request import ItemFunctionMcpApprovalRequest
