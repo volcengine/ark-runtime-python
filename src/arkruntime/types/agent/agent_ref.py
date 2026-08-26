@@ -6,11 +6,15 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import List, Optional
 
 from arkruntime._models import BaseModel
 
 from .agent_ref_type import AgentRefType
+from .agent_skill_ref import AgentSkillRef
+from .mcp_server import MCPServer
+from .model_config import ModelConfig
+from .tool_item import ToolItem
 
 
 class AgentRef(BaseModel):
@@ -29,4 +33,36 @@ class AgentRef(BaseModel):
     version: Optional[int] = None
     """
     被引用 Agent 的版本号。
+    """
+    name: Optional[str] = None
+    """
+    Session 响应中冻结的成员 Agent 名称。
+    """
+    description: Optional[str] = None
+    """
+    Session 响应中冻结的成员 Agent 描述。
+    """
+    model: Optional[ModelConfig] = None
+    """
+    Session 响应中冻结的成员 Agent 模型配置。
+    """
+    system: Optional[str] = None
+    """
+    Session 响应中冻结的成员 Agent system prompt。
+    """
+    tools: Optional[List[ToolItem]] = None
+    """
+    Session 响应中冻结的成员 Agent 工具配置。
+    """
+    mcp_servers: Optional[List[MCPServer]] = None
+    """
+    Session 响应中冻结的成员 Agent MCP servers。
+    """
+    skills: Optional[List[AgentSkillRef]] = None
+    """
+    Session 响应中冻结的成员 Agent skills。
+    """
+    display_name: Optional[str] = None
+    """
+    Session 响应中冻结的成员 Agent 展示名。
     """

@@ -19,6 +19,9 @@ python examples/async_responses_create.py
 | `environments.py` | Managed-Agents: Environment lifecycle — Create/Get/List/Update/Delete (cloud + unrestricted networking) |
 | `sessions_loop.py` | Managed-Agents: end-to-end agent loop — Agent + Env + Session, send user.message, stream events until idle |
 | `memory_stores.py` | Managed-Agents: MemoryStore + nested Memory CRUD |
+| `self_hosted_worker.py` | Managed-Agents: self-hosted worker poll / handle loop |
+
+`self_hosted_worker.py` uses the client's production default `https://ark.cn-beijing.volces.com/api/v3`.
 
 The Managed-Agents examples additionally accept `ARK_MODEL_ID` for the model id (falls back to a `${YOUR_MODEL_ID}` placeholder that will 400 at runtime).
 

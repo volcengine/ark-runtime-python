@@ -35,6 +35,10 @@ class CreateAgentRequest(BaseModel):
     """
     描述信息。
     """
+    display_name: Optional[str] = None
+    """
+    展示名。
+    """
     system: Optional[str] = None
     """
     System prompt。

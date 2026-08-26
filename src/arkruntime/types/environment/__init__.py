@@ -12,11 +12,20 @@ from .env_config import EnvConfig
 from .env_config_type import EnvConfigType
 from .environment import Environment
 from .environment_scope import EnvironmentScope
+from .environment_with_overrides import EnvironmentWithOverrides
+from .heartbeat_work_response import HeartbeatWorkResponse
 from .list_environments_response import ListEnvironmentsResponse
 from .networking_config import NetworkingConfig
 from .networking_type import NetworkingType
 from .packages_config import PackagesConfig
+from .poll_work_empty_response import PollWorkEmptyResponse
+from .stop_work_body import StopWorkBody
+from .tos_config import TosConfig
 from .update_environment_request import UpdateEnvironmentRequest
+from .volc_tag import VolcTag
+from .work_data import WorkData
+from .work_item import WorkItem
+from .work_state import WorkState
 
 __all__ = [
     "CreateEnvironmentRequest",
@@ -25,12 +34,21 @@ __all__ = [
     "EnvConfigType",
     "Environment",
     "EnvironmentScope",
+    "EnvironmentWithOverrides",
+    "HeartbeatWorkResponse",
     "ListEnvironmentsResponse",
     "NetworkingConfig",
     "NetworkingType",
     "PackagesConfig",
+    "PollWorkEmptyResponse",
+    "StopWorkBody",
+    "TosConfig",
     "UpdateEnvironmentRequest",
+    "VolcTag",
+    "WorkData",
+    "WorkItem",
+    "WorkState",
 ]
 
 # Hand-written extras (preserved across regen via Makefile rsync --exclude=*_shim.py).
-from ._init_extras_shim import *  # noqa: F401,F403
+from ._init_extras_shim import *  # noqa: F401,F403,E402

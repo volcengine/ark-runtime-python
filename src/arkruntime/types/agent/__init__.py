@@ -11,6 +11,7 @@ from .agent_ref import AgentRef
 from .agent_ref_type import AgentRefType
 from .agent_skill_ref import AgentSkillRef
 from .create_agent_request import CreateAgentRequest
+from .custom_tool_input_schema import CustomToolInputSchema
 from .delete_agent_response import DeleteAgentResponse
 from .list_agents_response import ListAgentsResponse
 from .mcp_server import MCPServer
@@ -23,6 +24,7 @@ from .permission_policy import PermissionPolicy
 from .permission_policy_type import PermissionPolicyType
 from .skill_ref_type import SkillRefType
 from .tag import Tag
+from .token_limits import TokenLimits
 from .tool_config import ToolConfig
 from .tool_default_config import ToolDefaultConfig
 from .tool_item import ToolItem
@@ -34,6 +36,7 @@ __all__ = [
     "AgentRefType",
     "AgentSkillRef",
     "CreateAgentRequest",
+    "CustomToolInputSchema",
     "DeleteAgentResponse",
     "ListAgentsResponse",
     "MCPServer",
@@ -46,6 +49,7 @@ __all__ = [
     "PermissionPolicyType",
     "SkillRefType",
     "Tag",
+    "TokenLimits",
     "ToolConfig",
     "ToolDefaultConfig",
     "ToolItem",
@@ -53,4 +57,4 @@ __all__ = [
 ]
 
 # Hand-written extras (preserved across regen via Makefile rsync --exclude=*_shim.py).
-from ._init_extras_shim import *  # noqa: F401,F403
+from ._init_extras_shim import *  # noqa: F401,F403,E402

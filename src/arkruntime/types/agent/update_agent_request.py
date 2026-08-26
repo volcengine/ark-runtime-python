@@ -14,6 +14,7 @@ from .agent_skill_ref import AgentSkillRef
 from .mcp_server import MCPServer
 from .model_config import ModelConfig
 from .multiagent_config import MultiagentConfig
+from .tag import Tag
 from .tool_item import ToolItem
 
 
@@ -35,6 +36,10 @@ class UpdateAgentRequest(BaseModel):
     name: Optional[str] = None
     """
     人类可读名称。
+    """
+    display_name: Optional[str] = None
+    """
+    展示名。
     """
     model: Optional[ModelConfig] = None
     """
@@ -67,4 +72,8 @@ class UpdateAgentRequest(BaseModel):
     metadata: Optional[Dict[str, str]] = None
     """
     用户自定义键值对元数据（patch）。
+    """
+    tags: Optional[List[Tag]] = None
+    """
+    资源标签（整体替换）。
     """

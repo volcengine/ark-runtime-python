@@ -15,6 +15,11 @@ from .create_session_request import CreateSessionRequest
 from .create_session_resource_request import CreateSessionResourceRequest
 from .delete_session_response import DeleteSessionResponse
 from .document_source import DocumentSource
+from .environment_config_override import EnvironmentConfigOverride
+from .environment_networking_config import EnvironmentNetworkingConfig
+from .environment_packages_config import EnvironmentPackagesConfig
+from .environment_tos_config import EnvironmentTosConfig
+from .environment_with_overrides import EnvironmentWithOverrides
 from .file_document_source import FileDocumentSource
 from .file_image_source import FileImageSource
 from .image_source import ImageSource
@@ -66,6 +71,7 @@ from .managed_agents_user_tool_confirmation_event_params import (
 from .managed_agents_user_tool_result_event_params import (
     ManagedAgentsUserToolResultEventParams,
 )
+from .model_overrides import ModelOverrides
 from .plain_text_document_source import PlainTextDocumentSource
 from .search_result_citations import SearchResultCitations
 from .search_result_content import SearchResultContent
@@ -95,6 +101,11 @@ __all__ = [
     "CreateSessionResourceRequest",
     "DeleteSessionResponse",
     "DocumentSource",
+    "EnvironmentConfigOverride",
+    "EnvironmentNetworkingConfig",
+    "EnvironmentPackagesConfig",
+    "EnvironmentTosConfig",
+    "EnvironmentWithOverrides",
     "FileDocumentSource",
     "FileImageSource",
     "ImageSource",
@@ -130,6 +141,7 @@ __all__ = [
     "ManagedAgentsUserMessageEventParams",
     "ManagedAgentsUserToolConfirmationEventParams",
     "ManagedAgentsUserToolResultEventParams",
+    "ModelOverrides",
     "PlainTextDocumentSource",
     "SearchResultCitations",
     "SearchResultContent",
@@ -151,4 +163,4 @@ __all__ = [
 ]
 
 # Hand-written extras (preserved across regen via Makefile rsync --exclude=*_shim.py).
-from ._init_extras_shim import *  # noqa: F401,F403
+from ._init_extras_shim import *  # noqa: F401,F403,E402

@@ -76,6 +76,10 @@ class Agent(BaseModel):
     """
     资源标签。
     """
+    display_name: Optional[str] = None
+    """
+    展示名。
+    """
     created_at: str
     """
     RFC 3339 时间。

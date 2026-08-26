@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Dict, List
 
 from arkruntime._models import BaseModel
 
@@ -16,7 +16,7 @@ class SendSessionEventsResponse(BaseModel):
     SendSessionEvents 响应体（回执）。
     """
 
-    success: Optional[bool] = None
+    data: List[Dict[str, object]]
     """
-    是否成功接收（server 决定语义）。
+    服务端落库 / 转发完成后的事件回声。
     """

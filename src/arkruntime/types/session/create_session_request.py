@@ -11,6 +11,7 @@ from typing import List, Optional
 from arkruntime._models import BaseModel
 
 from .agent_identifier import AgentIdentifier
+from .environment_with_overrides import EnvironmentWithOverrides
 from .session_resource import SessionResource
 from .tag import Tag
 
@@ -28,9 +29,13 @@ class CreateSessionRequest(BaseModel):
     """
     Agent 标识。
     """
-    environment_id: str
+    environment_id: Optional[str] = None
     """
-    关联的 Environment ID。
+    关联的 Environment ID。与 `environment` 二选一。
+    """
+    environment: Optional[EnvironmentWithOverrides] = None
+    """
+    关联 Environment 的覆写引用。与 `environment_id` 二选一。
     """
     tags: Optional[List[Tag]] = None
     """

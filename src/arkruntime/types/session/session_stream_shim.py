@@ -538,3 +538,9 @@ class ListSessionEventsResponse(_DictCompatModel):
             else:
                 typed.append(item)
         return {"events": typed, "next_page": data.get("next_page")}
+
+    @classmethod
+    def construct(cls, _fields_set: Any = None, **values: Any) -> "ListSessionEventsResponse":
+        """Decode the wire envelope when the SDK uses Pydantic's fast path."""
+        decoded = cls._decode_wire_events(values)
+        return cls.model_construct(_fields_set=_fields_set, **decoded)

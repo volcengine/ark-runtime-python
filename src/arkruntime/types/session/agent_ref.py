@@ -6,26 +6,56 @@
 
 from __future__ import annotations
 
-from typing import Literal, Optional
+from typing import Dict, List, Optional
 
 from arkruntime._models import BaseModel
+
+from .model_overrides import ModelOverrides
 
 
 class AgentRef(BaseModel):
     """
-    Agent 引用（对象形态）：`type: "agent"` + id + optional version。
-    与 CreateSessionRequest.agent 联合使用。
+    Agent 引用（对象形态）：`type: "agent"` 或 `"agent_with_overrides"`。
+    MA wire 上两种对象形态都走同一个 JSON object 承载，避免 SDK 生成复杂 union。
     """
 
-    type: Literal["agent"]
+    type: str
     """
-    固定 `"agent"`。
+    `"agent"` 或 `"agent_with_overrides"`。
     """
-    id: str
+    id: Optional[str] = None
     """
     Agent ID。
     """
     version: Optional[int] = None
     """
     Agent 版本号；不传走最新。
+    """
+    system: Optional[str] = None
+    """
+    System prompt 覆写。
+    """
+    tools: Optional[List[Dict[str, object]]] = None
+    """
+    工具配置覆写。
+    """
+    mcp_servers: Optional[List[Dict[str, object]]] = None
+    """
+    MCP server 配置覆写。
+    """
+    skills: Optional[List[Dict[str, object]]] = None
+    """
+    Skill 配置覆写。
+    """
+    multiagent: Optional[Dict[str, object]] = None
+    """
+    多 Agent 配置覆写。
+    """
+    display_name: Optional[str] = None
+    """
+    Session 响应中冻结的 Agent 展示名。
+    """
+    model: Optional[ModelOverrides] = None
+    """
+    模型运行参数覆写。
     """

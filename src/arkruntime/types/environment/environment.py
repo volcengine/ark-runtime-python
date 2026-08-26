@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, Literal, Optional
+from typing import Dict, List, Literal, Optional
 
 from arkruntime._models import BaseModel
 
@@ -54,4 +54,8 @@ class Environment(BaseModel):
     updated_at: str
     """
     RFC 3339 时间。
+    """
+    overridden_fields: Optional[List[str]] = None
+    """
+    Session 使用 EnvironmentWithOverrides 时，本次被覆写的 config 子字段。
     """

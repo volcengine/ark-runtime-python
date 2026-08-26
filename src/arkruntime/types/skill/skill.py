@@ -40,7 +40,23 @@ class Skill(BaseModel):
     """
     最新版本号。
     """
-    name: str
+    display_title: str
     """
-    人类可读名称。
+    Skill 展示名。
+    """
+    source: str
+    """
+    Skill 来源，例如 `custom` / `skill_hub` / `ark`。
+    """
+    updated_at: int
+    """
+    更新时间（Unix 秒）。
+    """
+    name: Optional[str] = None
+    """
+    SKILL.md 中解析出的 name。
+    """
+    protection_enabled: Optional[bool] = None
+    """
+    是否启用内容保护。
     """

@@ -16,3 +16,7 @@ class CreateSkillRequest(BaseModel):
     """
     Skill 展示名。
     """
+    protection_enabled: Optional[bool] = None
+    """
+    是否启用 Skill 内容保护。
+    """
