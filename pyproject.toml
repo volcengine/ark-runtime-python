@@ -44,6 +44,9 @@ dev = [
     "respx>=0.21",
 ]
 
+[tool.setuptools]
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
+
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["arkruntime*"]

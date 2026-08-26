@@ -30,3 +30,7 @@ class AgentSkillRef(BaseModel):
     """
     Skill 版本号，可选；不传走最新。
     """
+    use_latest: Optional[bool] = None
+    """
+    Session 快照中标识创建时用户选择的是使用最新版本。
+    """

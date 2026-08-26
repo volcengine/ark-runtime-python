@@ -10,6 +10,7 @@ from typing import List, Optional
 
 from arkruntime._models import BaseModel
 
+from .custom_tool_input_schema import CustomToolInputSchema
 from .tool_config import ToolConfig
 from .tool_default_config import ToolDefaultConfig
 
@@ -20,6 +21,7 @@ class ToolItem(BaseModel):
     - `agent_toolset_<date>`：内置工具集（当前默认 `agent_toolset_20260701`；
     存量 `agent_toolset_20260401` 仍兼容）
     - `mcp_toolset`：来自 `mcp_servers[]` 的工具集
+    - `evolution`：自演进类工具
     - `custom`：客户端执行的自定义工具
 
     所有变体字段合并在一个 model 里，未使用的字段留空即可（proto oneof
@@ -50,8 +52,7 @@ class ToolItem(BaseModel):
     """
     `custom` 专用；1–1024 字符。
     """
-    input_schema: Optional[str] = None
+    input_schema: Optional[CustomToolInputSchema] = None
     """
-    `custom` 专用；承载 JSON Schema 的字符串形态
-    （wire 上是 JSON-encoded string，非 nested object）。
+    `custom` 专用；承载 JSON Schema 对象。
     """

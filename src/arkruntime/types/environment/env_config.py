@@ -13,6 +13,7 @@ from arkruntime._models import BaseModel
 from .env_config_type import EnvConfigType
 from .networking_config import NetworkingConfig
 from .packages_config import PackagesConfig
+from .tos_config import TosConfig
 
 
 class EnvConfig(BaseModel):
@@ -35,4 +36,12 @@ class EnvConfig(BaseModel):
     env: Optional[Dict[str, str]] = None
     """
     容器启动时注入的环境变量。
+    """
+    setup_script: Optional[str] = None
+    """
+    沙箱启动阶段执行的初始化脚本。
+    """
+    tos: Optional[TosConfig] = None
+    """
+    Environment outputs 的 TOS 存储配置。
     """

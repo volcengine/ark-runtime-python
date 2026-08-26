@@ -78,3 +78,7 @@ class Session(BaseModel):
     """
     资源标签。
     """
+    environment: Optional[Dict[str, object]] = None
+    """
+    Session 创建时冻结的 Environment 快照。
+    """

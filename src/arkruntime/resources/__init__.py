@@ -7,7 +7,7 @@ from .batch import AsyncBatch, Batch
 from .chat import AsyncChat, Chat
 from .content_generation import AsyncContentGeneration, ContentGeneration
 from .embeddings import AsyncEmbeddings, Embeddings
-from .environments import AsyncEnvironments, Environments
+from .environments import AsyncEnvironments, AsyncEnvironmentWork, Environments, EnvironmentWork
 from .files import AsyncFiles, Files
 from .images import AsyncImages, Images
 from .memory_stores import (
@@ -56,6 +56,8 @@ __all__ = [
     "AsyncAgents",
     "Environments",
     "AsyncEnvironments",
+    "EnvironmentWork",
+    "AsyncEnvironmentWork",
     "MemoryStores",
     "AsyncMemoryStores",
     "Memories",

@@ -6,11 +6,12 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import List, Optional
 
 from arkruntime._models import BaseModel
 
 from .model_speed import ModelSpeed
+from .token_limits import TokenLimits
 
 
 class ModelConfig(BaseModel):
@@ -25,4 +26,24 @@ class ModelConfig(BaseModel):
     speed: Optional[ModelSpeed] = None
     """
     速度档位。空字符串走默认（并非所有模型都支持 `fast`）。
+    """
+    token_limits: Optional[TokenLimits] = None
+    """
+    模型 token 限制快照。
+    """
+    input_modalities: Optional[List[str]] = None
+    """
+    底模支持的输入模态列表。
+    """
+    provider: Optional[str] = None
+    """
+    模型提供方。
+    """
+    thinking: Optional[str] = None
+    """
+    thinking 配置。
+    """
+    reasoning_effort: Optional[str] = None
+    """
+    推理努力程度。
     """

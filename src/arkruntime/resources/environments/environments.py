@@ -5,6 +5,7 @@ from typing import Optional
 import httpx
 
 from ..._base_client import make_request_options
+from ..._compat import cached_property
 from ..._managed_agents_serialize import dump_body
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._types import NOT_GIVEN, Body, Headers, NotGiven, Query
@@ -13,6 +14,7 @@ from ...types.environment.env_config import EnvConfig
 from ...types.environment.environment import Environment
 from ...types.environment.environment_scope import EnvironmentScope
 from ...types.environment.list_environments_response import ListEnvironmentsResponse
+from .work import AsyncEnvironmentWork, EnvironmentWork
 
 __all__ = ["Environments", "AsyncEnvironments"]
 
@@ -29,6 +31,10 @@ def _list_query(*, limit=NOT_GIVEN, page=NOT_GIVEN) -> dict:
 
 
 class Environments(SyncAPIResource):
+    @cached_property
+    def work(self) -> EnvironmentWork:
+        return EnvironmentWork(self._client)
+
     def create(
         self,
         *,
@@ -123,6 +129,10 @@ class Environments(SyncAPIResource):
 
 
 class AsyncEnvironments(AsyncAPIResource):
+    @cached_property
+    def work(self) -> AsyncEnvironmentWork:
+        return AsyncEnvironmentWork(self._client)
+
     async def create(
         self,
         *,

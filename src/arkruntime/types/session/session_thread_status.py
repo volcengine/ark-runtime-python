@@ -17,4 +17,4 @@ class SessionThreadStatus(str, Enum):
     idle = "idle"
     running = "running"
     terminated = "terminated"
-    archived = "archived"
+    rescheduling = "rescheduling"
