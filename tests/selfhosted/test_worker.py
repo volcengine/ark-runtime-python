@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import logging
 import time
 
 import pytest
@@ -18,6 +19,7 @@ from arkruntime.selfhosted import (
     WorkPoller,
     WorkPollerOptions,
 )
+from arkruntime.selfhosted.tools import ToolContext
 from arkruntime.selfhosted.types import WorkData, is_fatal_4xx
 
 
@@ -147,6 +149,49 @@ def test_poller_auto_stop_is_configurable(auto_stop, expected_stops) -> None:
     poller.close()
 
     assert len(api.stops) == expected_stops
+
+
+def test_worker_tool_timeout_overrides_tool_context(tmp_path) -> None:
+    worker = EnvironmentWorker(
+        object(),
+        EnvironmentWorkerOptions(
+            workdir=str(tmp_path),
+            tool_timeout_seconds=0.02,
+        ),
+    )
+
+    context = worker._tool_context(str(tmp_path), None)
+
+    assert context.tool_timeout_seconds == 0.02
+
+
+@pytest.mark.parametrize("timeout", [None, 0, -1])
+def test_worker_nonpositive_tool_timeout_preserves_tool_context(tmp_path, timeout) -> None:
+    worker = EnvironmentWorker(
+        object(),
+        EnvironmentWorkerOptions(
+            workdir=str(tmp_path),
+            tool_context=ToolContext(workdir=str(tmp_path), tool_timeout_seconds=7),
+            tool_timeout_seconds=timeout,
+        ),
+    )
+
+    context = worker._tool_context(str(tmp_path), None)
+
+    assert context.tool_timeout_seconds == 7
+
+
+def test_worker_options_preserve_legacy_positional_order() -> None:
+    custom_tools = {"custom": object()}
+    logger = logging.getLogger("legacy-positional-worker")
+
+    options = EnvironmentWorkerOptions(
+        "env-1", "worker-1", ".", False, None, None, 60, custom_tools, logger
+    )
+
+    assert options.custom_tools is custom_tools
+    assert options.logger is logger
+    assert options.tool_timeout_seconds is None
 
 
 def test_session_id_cannot_escape_worker_root(tmp_path) -> None:

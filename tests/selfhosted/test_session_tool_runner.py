@@ -9,7 +9,7 @@ import time
 import pytest
 
 from arkruntime.selfhosted import Event, ListEventsResponse, SessionToolRunner, SessionToolRunnerOptions
-from arkruntime.selfhosted.tools import FunctionTool, ToolContext, ToolSet
+from arkruntime.selfhosted.tools import FunctionTool, ToolContext, ToolSet, text_result
 
 
 class _ListAPI:
@@ -153,7 +153,8 @@ def test_reconcile_does_not_reset_idle_deadline_for_seen_history(tmp_path) -> No
     assert runner._state.idle_armed_at == armed_at
 
 
-def test_tool_execution_copies_context_and_preserves_configured_timeout(tmp_path) -> None:
+@pytest.mark.parametrize("override, expected", [(None, 7), (0, 7), (-1, 7), (3, 3)])
+def test_tool_execution_copies_context_and_preserves_configured_timeout(tmp_path, override, expected) -> None:
     contexts = []
 
     def capture(_input, context):
@@ -167,6 +168,7 @@ def test_tool_execution_copies_context_and_preserves_configured_timeout(tmp_path
         SessionToolRunnerOptions(
             tools=ToolSet([FunctionTool("capture", capture)]),
             tool_context=original,
+            tool_timeout_seconds=override,
         ),
     )
     event = Event(id="tool-1", type="agent.tool_use", name="capture", tool_use_id="call-1", input={})
@@ -174,8 +176,43 @@ def test_tool_execution_copies_context_and_preserves_configured_timeout(tmp_path
     runner._state.execute_tool(event, custom=False)
 
     assert contexts[0] is not original
-    assert contexts[0].tool_timeout_seconds == 7
+    assert contexts[0].tool_timeout_seconds == expected
     assert original.tool_timeout_seconds == 7
+
+
+@pytest.mark.parametrize("custom", [False, True])
+def test_tool_timeout_abandons_noncooperative_tool(tmp_path, custom) -> None:
+    release = threading.Event()
+    started = threading.Event()
+
+    def block(_input, _context):
+        started.set()
+        release.wait(2)
+        return text_result("late")
+
+    tool = FunctionTool("blocking", block)
+    runner = SessionToolRunner(
+        object(),
+        "session-1",
+        SessionToolRunnerOptions(
+            tools=ToolSet() if custom else ToolSet([tool]),
+            tool_context=ToolContext(workdir=str(tmp_path)),
+            custom_tools={"blocking": tool} if custom else {},
+            tool_timeout_seconds=0.02,
+        ),
+    )
+    event = Event(id="tool-1", type="agent.tool_use", name="blocking", tool_use_id="call-1", input={})
+
+    started_at = time.monotonic()
+    try:
+        result = runner._state.execute_tool(event, custom=custom)
+    finally:
+        release.set()
+
+    assert started.wait(1)
+    assert time.monotonic() - started_at < 0.5
+    assert result.is_error is True
+    assert result.content[0].text == "tool execution timed out after 0.02s"
 
 
 def test_successful_send_stays_answered_when_mark_sent_fails(tmp_path, caplog) -> None:
