@@ -50,6 +50,12 @@ class WorkPollerOptions:
 
 
 class WorkPoller:
+    """Serial work poller with optional ownership cleanup.
+
+    ``auto_stop`` is intended for iterator-style serial processing. Callers
+    dispatching work concurrently must disable it and own heartbeat and stop.
+    """
+
     def __init__(self, api: Any, options: WorkPollerOptions) -> None:
         if api is None:
             raise ValueError("api is required")
@@ -196,6 +202,7 @@ class EnvironmentWorkerOptions:
     max_idle_seconds: Optional[float] = DEFAULT_MAX_IDLE_SECONDS
     custom_tools: Dict[str, Tool] = field(default_factory=dict)
     logger: logging.Logger = logging.getLogger("arkruntime.selfhosted.environment_worker")
+    tool_timeout_seconds: Optional[float] = None
 
 
 class EnvironmentWorker:
@@ -289,6 +296,7 @@ class EnvironmentWorker:
                     custom_tools=self.options.custom_tools,
                     result_store=store,
                     max_idle_seconds=self.options.max_idle_seconds,
+                    tool_timeout_seconds=self.options.tool_timeout_seconds,
                     stop_event=work_stop,
                     logger=self.options.logger,
                 ),
@@ -381,11 +389,14 @@ class EnvironmentWorker:
     def _tool_context(self, workdir: str, cancel_event: Any) -> ToolContext:
         base = self.options.tool_context or ToolContext(workdir=workdir)
         env = None if base.env is None else dict(base.env)
+        tool_timeout_seconds = base.tool_timeout_seconds
+        if self.options.tool_timeout_seconds is not None and self.options.tool_timeout_seconds > 0:
+            tool_timeout_seconds = self.options.tool_timeout_seconds
         return ToolContext(
             workdir=workdir,
             env=env,
             unrestricted_paths=self.options.unrestricted_paths or base.unrestricted_paths,
-            tool_timeout_seconds=base.tool_timeout_seconds,
+            tool_timeout_seconds=tool_timeout_seconds,
             cancel_event=cancel_event,
         )
 

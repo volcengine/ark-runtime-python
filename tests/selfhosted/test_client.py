@@ -26,6 +26,25 @@ def _ark_client(transport: httpx.MockTransport, *, max_retries: int = 0) -> Ark:
     )
 
 
+def test_selfhosted_event_stream_has_default_read_inactivity_timeout() -> None:
+    seen = []
+
+    class Events:
+        def stream(self, session_id, *, timeout):
+            seen.append((session_id, timeout))
+            return iter(())
+
+    class Sessions:
+        events = Events()
+
+    class Client:
+        sessions = Sessions()
+
+    list(ClientAPI(Client()).stream_events("session-1"))
+
+    assert seen == [("session-1", 30.0)]
+
+
 def test_poll_work_preserves_nested_session_data() -> None:
     work = {
         "id": "sesn-20260814050521-zb4l4",

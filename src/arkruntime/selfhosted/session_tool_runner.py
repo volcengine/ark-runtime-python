@@ -17,6 +17,7 @@ from .types import (
     CONFIRMATION_ALLOW,
     CONFIRMATION_DENY,
     DEFAULT_MAX_IDLE_SECONDS,
+    DEFAULT_TOOL_TIMEOUT_SECONDS,
     EVENT_LIST_ORDER_ASC,
     EVENT_TYPE_AGENT_CUSTOM_TOOL_USE,
     EVENT_TYPE_AGENT_TOOL_USE,
@@ -48,6 +49,30 @@ STREAM_BACKOFF_CAP = 10.0
 STREAM_HEALTHY_AFTER = 30.0
 SEND_RETRIES = 3
 STREAM_QUEUE_SIZE = 256
+
+
+class _ToolCancelEvent:
+    def __init__(self, parent: Any = None) -> None:
+        self._parent = parent
+        self._local = threading.Event()
+
+    def set(self) -> None:
+        self._local.set()
+
+    def is_set(self) -> bool:
+        return self._local.is_set() or bool(self._parent and self._parent.is_set())
+
+    def wait(self, timeout: Optional[float] = None) -> bool:
+        deadline = None if timeout is None else time.monotonic() + max(timeout, 0)
+        while not self.is_set():
+            wait_for = 0.05
+            if deadline is not None:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    return self.is_set()
+                wait_for = min(wait_for, remaining)
+            self._local.wait(wait_for)
+        return True
 
 
 @dataclass
@@ -413,8 +438,37 @@ class _RunnerState:
 
     def execute_tool(self, event: Event, custom: bool) -> ToolResult:
         context = replace(self.runner.options.tool_context)
-        if self.runner.options.tool_timeout_seconds is not None:
+        if self.runner.options.tool_timeout_seconds is not None and self.runner.options.tool_timeout_seconds > 0:
             context.tool_timeout_seconds = self.runner.options.tool_timeout_seconds
+        if context.tool_timeout_seconds <= 0:
+            context.tool_timeout_seconds = DEFAULT_TOOL_TIMEOUT_SECONDS
+        cancel_event = _ToolCancelEvent(context.cancel_event)
+        context.cancel_event = cancel_event
+        results: "queue.Queue[ToolResult]" = queue.Queue(maxsize=1)
+
+        def execute() -> None:
+            results.put(self._execute_tool(event, custom, context))
+
+        thread = threading.Thread(target=execute, name="ma-self-host-tool", daemon=True)
+        thread.start()
+        deadline = time.monotonic() + context.tool_timeout_seconds
+        while True:
+            if self.runner._is_stopped() or cancel_event.is_set():
+                cancel_event.set()
+                return error_result("tool execution canceled")
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                try:
+                    return results.get_nowait()
+                except queue.Empty:
+                    cancel_event.set()
+                    return error_result(f"tool execution timed out after {context.tool_timeout_seconds:g}s")
+            try:
+                return results.get(timeout=min(remaining, 0.05))
+            except queue.Empty:
+                continue
+
+    def _execute_tool(self, event: Event, custom: bool, context: ToolContext) -> ToolResult:
         if custom:
             tool = self.runner.options.custom_tools[event.name]
             try:

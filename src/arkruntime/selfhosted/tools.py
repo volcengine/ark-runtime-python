@@ -69,6 +69,8 @@ class ToolResult:
 
 
 class Tool:
+    """Tool contract; the runner enforces timeouts and tools should release promptly on cancellation."""
+
     name: str
 
     def execute(self, tool_input: Any, context: "ToolContext") -> ToolResult:
