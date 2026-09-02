@@ -1,6 +1,6 @@
 # Ark Runtime Python SDK
 
-The official Python library for the Volcengine Ark runtime API. It provides convenient access to the Ark REST API from any Python 3.8+ application, with both synchronous and asynchronous clients.
+The official Python library for accessing ModelArk on Volcengine and BytePlus. It provides synchronous and asynchronous clients, typed models, streaming, authentication, retries, and timeout configuration.
 
 ## Installation
 
@@ -8,16 +8,33 @@ The official Python library for the Volcengine Ark runtime API. It provides conv
 pip install arkruntime
 ```
 
-## Usage
+## Choose Volcengine or BytePlus
 
-Create a client by setting the `ARK_API_KEY` environment variable:
+Set `ARK_API_KEY`, then choose the client factory for the service you use. The factory configures the correct base URL and region; request construction and all subsequent SDK calls are the same.
+
+### Volcengine (China)
 
 ```python
 from arkruntime import Ark
 
-client = Ark()
-# or explicitly: Ark(api_key="your-api-key")
+client = Ark.volc()
+# or explicitly: Ark.volc(api_key="your-api-key")
 ```
+
+### BytePlus (BP)
+
+```python
+from arkruntime import Ark
+
+client = Ark.byteplus()
+# or explicitly: Ark.byteplus(api_key="your-api-key")
+```
+
+Use a model ID available in the corresponding Volcengine or BytePlus account. Model IDs can differ between the two services; the examples use `doubao-seed-2-1-pro-260628` for Volcengine and `seed-2-0-lite-260428` for BytePlus. Override either default with `ARK_MODEL`.
+
+The async client provides the same factories: `AsyncArk.volc()` and `AsyncArk.byteplus()`.
+
+## Quick start
 
 ### Responses API
 
@@ -25,14 +42,22 @@ client = Ark()
 import os
 from arkruntime import Ark
 
-client = Ark()
+client = Ark.volc()
 
 response = client.responses.create(
     model=os.environ.get("ARK_MODEL", "doubao-seed-2-1-pro-260628"),
     input="Explain how large language models work in three sentences.",
 )
-print(response.output_text)
+for item in response.output or []:
+    if item.type == "message":
+        for content in item.content:
+            if content.type == "output_text":
+                print(content.text)
 ```
+
+For BytePlus, change only the client line to `client = Ark.byteplus()` and set `ARK_MODEL` to a BytePlus model ID.
+
+## Usage
 
 ### Chat Completions
 
@@ -40,7 +65,7 @@ print(response.output_text)
 import os
 from arkruntime import Ark
 
-client = Ark()
+client = Ark.volc()
 
 completion = client.chat.completions.create(
     model=os.environ.get("ARK_MODEL", "doubao-seed-2-1-pro-260628"),
@@ -62,7 +87,7 @@ Both the Responses and Chat Completions APIs support streaming via `stream=True`
 import os
 from arkruntime import Ark
 
-client = Ark()
+client = Ark.volc()
 
 stream = client.responses.create(
     model=os.environ.get("ARK_MODEL", "doubao-seed-2-1-pro-260628"),
@@ -79,7 +104,7 @@ for event in stream:
 import os
 from arkruntime import Ark
 
-client = Ark()
+client = Ark.volc()
 
 stream = client.chat.completions.create(
     model=os.environ.get("ARK_MODEL", "doubao-seed-2-1-pro-260628"),
@@ -100,14 +125,18 @@ import asyncio
 import os
 from arkruntime import AsyncArk
 
-client = AsyncArk()
+client = AsyncArk.volc()
 
 async def main():
     response = await client.responses.create(
         model=os.environ.get("ARK_MODEL", "doubao-seed-2-1-pro-260628"),
         input="Explain quantum computing briefly.",
     )
-    print(response.output_text)
+    for item in response.output or []:
+        if item.type == "message":
+            for content in item.content:
+                if content.type == "output_text":
+                    print(content.text)
 
 asyncio.run(main())
 ```
@@ -120,7 +149,7 @@ Pass images alongside text using multimodal content blocks.
 import os
 from arkruntime import Ark
 
-client = Ark()
+client = Ark.volc()
 
 completion = client.chat.completions.create(
     model=os.environ.get("ARK_MODEL", "doubao-seed-2-1-pro-260628"),
@@ -144,7 +173,7 @@ import json
 import os
 from arkruntime import Ark
 
-client = Ark()
+client = Ark.volc()
 
 tools = [
     {
@@ -179,7 +208,7 @@ print(f"Arguments: {tool_call.function.arguments}")
 ```python
 from arkruntime import Ark
 
-client = Ark()
+client = Ark.volc()
 
 # Upload a file
 file = client.files.create(file=open("data.jsonl", "rb"), purpose="batch")
@@ -201,7 +230,7 @@ The SDK raises typed exceptions for API errors.
 from arkruntime import Ark
 from arkruntime._exceptions import ArkAPIError, ArkRateLimitError, ArkAuthenticationError
 
-client = Ark()
+client = Ark.volc()
 
 try:
     client.chat.completions.create(
@@ -243,7 +272,7 @@ The client automatically retries failed requests (default: 2 retries) with backo
 from arkruntime import Ark
 
 # Customize retries and timeout
-client = Ark(
+client = Ark.volc(
     max_retries=5,
     timeout=120.0,  # seconds
 )
@@ -266,7 +295,7 @@ client.chat.completions.create(
 ```python
 from arkruntime import Ark
 
-client = Ark(timeout=24 * 3600)
+client = Ark.volc(timeout=24 * 3600)
 
 result = client.batch.chat.completions.create(
     model="doubao-seed-2-1-pro-260628",
@@ -275,50 +304,18 @@ result = client.batch.chat.completions.create(
 print(result)
 ```
 
-## API coverage
-
-| API | Client path |
-|---|---|
-| Responses | `client.responses.create()` |
-| Chat Completions | `client.chat.completions.create()` |
-| Embeddings | `client.embeddings.create()` |
-| Multimodal Embeddings | `client.multimodal_embeddings.create()` |
-| Content Generation | `client.content_generation.tasks.create()` |
-| Images | `client.images.generate()` |
-| Files | `client.files.create()` / `.list()` / `.delete()` |
-| Tokenization | `client.tokenization.create()` |
-| Batch | `client.batch.chat.completions.create()` etc. |
-
 ## Examples
+
+For detailed usage guidance and legacy migration, see
+[`docs/README.md`](docs/README.md) and
+[`docs/migration.md`](docs/migration.md).
 
 See the [examples/](./examples) directory for runnable scripts:
 
-- `responses/` -- Responses API: multi-turn chat, function calling, structured output, video streaming
-- `chat/` -- Chat Completions: basic, function calling, reasoning, structured output, vision
-- `batch/` -- Batch inference: chat completions, embeddings, multimodal embeddings (sync + async)
-- `files/` -- Files API: upload, wait for processing, list, delete
-- `embeddings.py` -- Text embeddings
-- `multimodal_embeddings.py` -- Multimodal embeddings with image input
-- `content_generation_tasks.py` -- Video generation task lifecycle
-- `image_generations.py` -- Image generation
-- `tokenization.py` -- Tokenization API
+- `volc/` -- Volcengine China examples for Chat, Responses, images, video generation, embeddings, files, tokenization, batch APIs, and resource APIs
+- `byteplus/` -- supported BytePlus counterparts using the BytePlus client and regional model IDs
 
-## Development
-
-This repo uses [uv](https://docs.astral.sh/uv/) for dependency management.
-
-```bash
-uv sync                       # create venv + install runtime + dev deps
-uv run pytest                 # run tests
-uv run ruff check src/        # lint
-uv run ruff format src/       # format
-```
-
-A pre-commit hook runs the same linting as CI:
-
-```bash
-uv run pre-commit install     # one-time setup
-```
+MCP examples are provided for both clouds and explicitly send `ark-beta-mcp: true`. Other built-in-tool examples are CN-only and show their required beta headers.
 
 ## Requirements
 
