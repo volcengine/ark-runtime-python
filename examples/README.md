@@ -1,28 +1,20 @@
 # Examples
 
-Runnable examples for the `arkruntime` Python SDK. Each file expects `ARK_API_KEY` in the environment:
+Runnable examples for the `arkruntime` Python SDK. Set `ARK_API_KEY` and, for most examples, `ARK_MODEL` to a model ID available in your account.
 
 ```bash
 export ARK_API_KEY=...
-python examples/async_responses_create.py
+export ARK_MODEL=...
+python examples/volc/responses/async_create.py
 ```
 
-| File | What it shows |
-|---|---|
-| `async_responses_create.py` | Async client + POST /v1/responses with streaming |
-| `async_responses_doubao_app.py` | Responses with Doubao app tools |
-| `async_responses_video.py` | Video input in responses |
-| `multimodal_embeddings.py` | POST /embeddings/multimodal |
-| `content_generation_tasks.py` | full lifecycle on POST /contents/generations/tasks (create / poll / list / delete) |
-| `image_generations.py` | POST /images/generations — Seedream T2I, Seededit edit-from-image, sequential image generation |
-| `agents.py` | Managed-Agents: Agent lifecycle — Create/Get/List/Update/ListVersions/Delete |
-| `environments.py` | Managed-Agents: Environment lifecycle — Create/Get/List/Update/Delete (cloud + unrestricted networking) |
-| `sessions_loop.py` | Managed-Agents: end-to-end agent loop — Agent + Env + Session, send user.message, stream events until idle |
-| `memory_stores.py` | Managed-Agents: MemoryStore + nested Memory CRUD |
-| `self_hosted_worker.py` | Managed-Agents: self-hosted worker poll / handle loop |
+All service-calling examples are grouped by cloud:
 
-`self_hosted_worker.py` uses the client's production default `https://ark.cn-beijing.volces.com/api/v3`.
+- [`volc/`](./volc) uses `Ark.volc()` / `AsyncArk.volc()` and Volcengine China model IDs.
+- [`byteplus/`](./byteplus) uses `Ark.byteplus()` / `AsyncArk.byteplus()` and BytePlus model IDs.
 
-The Managed-Agents examples additionally accept `ARK_MODEL_ID` for the model id (falls back to a `${YOUR_MODEL_ID}` placeholder that will 400 at runtime).
+[`self_hosted_worker.py`](./self_hosted_worker.py) demonstrates the Managed-Agents self-hosted worker poll/handle loop and uses the client's production default `https://ark.cn-beijing.volces.com/api/v3`.
 
-Examples only cover currently-implemented APIs. See the `API Coverage` table in the top-level README for the roadmap.
+The paired multimodal and sparse embedding examples default to `doubao-embedding-vision-251215` / `skylark-embedding-vision-251215`. The paired image examples default to `doubao-seedream-5-0-pro-260628` / `dola-seedream-5-0-pro-260628`. The paired video-generation examples default to `doubao-seedance-2-0-fast-260128` / `dreamina-seedance-2-0-fast-260128`.
+
+MCP is available in both clouds and its examples explicitly send `ark-beta-mcp: true`. Other built-in tools are CN-only: Web Search sends `ark-beta-web-search: true`, and Doubao App sends `ark-beta-doubao-app: true`.

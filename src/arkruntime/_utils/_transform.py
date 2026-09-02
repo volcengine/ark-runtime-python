@@ -272,9 +272,10 @@ def _transform_typeddict(
     result: dict[str, object] = {}
     annotations = get_type_hints(expected_type, include_extras=True)
     for key, value in data.items():
-        if not is_given(value):
-            # we don't need to include `NotGiven` values here as they'll
-            # be stripped out before the request is sent anyway
+        if value is None or not is_given(value):
+            # Optional request parameters default to None in generated methods.
+            # Omit both None and NotGiven values so the wire payload contains
+            # only fields the caller actually supplied.
             continue
 
         type_ = annotations.get(key)
@@ -439,9 +440,10 @@ async def _async_transform_typeddict(
     result: dict[str, object] = {}
     annotations = get_type_hints(expected_type, include_extras=True)
     for key, value in data.items():
-        if not is_given(value):
-            # we don't need to include `NotGiven` values here as they'll
-            # be stripped out before the request is sent anyway
+        if value is None or not is_given(value):
+            # Optional request parameters default to None in generated methods.
+            # Omit both None and NotGiven values so the wire payload contains
+            # only fields the caller actually supplied.
             continue
 
         type_ = annotations.get(key)
