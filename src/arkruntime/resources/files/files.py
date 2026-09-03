@@ -58,7 +58,7 @@ class Files(SyncAPIResource):
     def create(
         self,
         *,
-        file: FileTypes,
+        file: Optional[FileTypes] = None,
         # AUTOGEN-START create-kwargs
         purpose: Purpose,
         preprocess_configs: Optional[PreprocessConfigsParam] = None,
@@ -84,9 +84,11 @@ class Files(SyncAPIResource):
             Mutually exclusive with `file`.
           tos: User-owned TOS bucket destination.
         """
+        if (file is None) == (url is None):
+            raise ValueError("Exactly one of `file` or `url` must be provided")
+
         body = deepcopy_minimal(
             {
-                "file": file,
                 # AUTOGEN-START create-body
                 "purpose": purpose,
                 "preprocess_configs": preprocess_configs,
@@ -96,6 +98,8 @@ class Files(SyncAPIResource):
                 # AUTOGEN-END create-body
             }
         )
+        if file is not None:
+            body["file"] = file
         files = extract_files(cast(Mapping[str, object], body), paths=[["file"]])
         extra_headers = {"Content-Type": "multipart/form-data", **(extra_headers or {})}
         return self._post(
@@ -225,7 +229,7 @@ class AsyncFiles(AsyncAPIResource):
     async def create(
         self,
         *,
-        file: FileTypes,
+        file: Optional[FileTypes] = None,
         # AUTOGEN-START create-kwargs
         purpose: Purpose,
         preprocess_configs: Optional[PreprocessConfigsParam] = None,
@@ -238,9 +242,11 @@ class AsyncFiles(AsyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None = None,
     ) -> FileObject:
+        if (file is None) == (url is None):
+            raise ValueError("Exactly one of `file` or `url` must be provided")
+
         body = deepcopy_minimal(
             {
-                "file": file,
                 # AUTOGEN-START create-body
                 "purpose": purpose,
                 "preprocess_configs": preprocess_configs,
@@ -250,6 +256,8 @@ class AsyncFiles(AsyncAPIResource):
                 # AUTOGEN-END create-body
             }
         )
+        if file is not None:
+            body["file"] = file
         files = extract_files(cast(Mapping[str, object], body), paths=[["file"]])
         extra_headers = {"Content-Type": "multipart/form-data", **(extra_headers or {})}
         return await self._post(
