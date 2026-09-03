@@ -185,22 +185,19 @@ def test_worker_options_preserve_legacy_positional_order() -> None:
     custom_tools = {"custom": object()}
     logger = logging.getLogger("legacy-positional-worker")
 
-    options = EnvironmentWorkerOptions(
-        "env-1", "worker-1", ".", False, None, None, 60, custom_tools, logger
-    )
+    options = EnvironmentWorkerOptions("env-1", "worker-1", ".", False, None, None, 60, custom_tools, logger)
 
     assert options.custom_tools is custom_tools
     assert options.logger is logger
     assert options.tool_timeout_seconds is None
 
 
-def test_session_id_cannot_escape_worker_root(tmp_path) -> None:
+def test_worker_uses_configured_workdir(tmp_path) -> None:
     worker = EnvironmentWorker(object(), EnvironmentWorkerOptions(workdir=str(tmp_path)))
 
-    workdir = worker._workdir_for("../../outside", use_workdir_as_session=False)
+    workdir = worker._workdir()
 
-    assert str(tmp_path.resolve()) in workdir
-    assert ".." not in workdir
+    assert workdir == str(tmp_path.resolve())
 
 
 @pytest.mark.parametrize("status_code", [408, 409, 412, 429])

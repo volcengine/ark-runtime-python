@@ -14,7 +14,7 @@ import zipfile
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 from .types import Session, SkillRef
 
@@ -38,6 +38,7 @@ class Initializer:
     def __init__(self, api: Any, options: InitializerOptions) -> None:
         self.api = api
         self.options = options
+        self._installed_skill_dirs: List[Path] = []
         if not self.options.skills_dir:
             self.options.skills_dir = str(Path(self.options.workdir) / "skills")
 
@@ -62,6 +63,20 @@ class Initializer:
                     exc,
                 )
                 continue
+
+    def cleanup(self) -> None:
+        """Remove only the skill directories installed by this initializer."""
+        errors = []
+        for path in self._installed_skill_dirs:
+            try:
+                shutil.rmtree(path)
+            except FileNotFoundError:
+                pass
+            except OSError as exc:
+                errors.append(f"{path}: {exc}")
+        self._installed_skill_dirs.clear()
+        if errors:
+            raise OSError("remove installed skills: " + "; ".join(errors))
 
     def install_skill(self, session_id: str, skill: SkillRef) -> None:
         Path(self.options.workdir).mkdir(parents=True, exist_ok=True)
@@ -93,6 +108,7 @@ class Initializer:
             source = _install_source_dir(Path(tmp))
             target = Path(self.options.skills_dir) / name
             backup = _replace_skill_dir(Path(source), target)
+            self._installed_skill_dirs.append(target)
             if backup is not None:
                 try:
                     shutil.rmtree(backup)

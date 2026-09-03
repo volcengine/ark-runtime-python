@@ -6,10 +6,11 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict, Optional, Tuple
 
 from .types import ContentBlock, Event, new_user_custom_tool_result_event, new_user_tool_result_event, utc_now_iso
 
@@ -27,10 +28,14 @@ class ToolCallStoreDecision:
 class FileToolResultStore:
     """File-backed ledger that avoids re-running side-effectful tool calls."""
 
-    def __init__(self, workdir: str) -> None:
+    def __init__(self, workdir: str, session_id: Optional[str] = None) -> None:
         if not workdir:
             raise ValueError("workdir must not be empty")
-        self.dir = Path(workdir) / ".ma_self_host_worker" / "tool_ledger"
+        self.dir = Path(workdir) / ".ma_self_hosted_worker" / "tool_ledger"
+        if session_id is not None:
+            if not session_id:
+                raise ValueError("session id must not be empty")
+            self.dir /= _session_ledger_name(session_id)
         self.dir.mkdir(parents=True, exist_ok=True, mode=0o700)
 
     def recover(self) -> Tuple[Dict[str, Event], Dict[str, bool]]:
@@ -142,6 +147,13 @@ def _unknown_tool_execution_result(call_id: str, event: Event) -> Event:
     if event.type == "agent.custom_tool_use":
         return new_user_custom_tool_result_event(call_id, content, True, event.session_thread_id)
     return new_user_tool_result_event(call_id, content, True, event.session_thread_id)
+
+
+def _session_ledger_name(session_id: str) -> str:
+    if re.fullmatch(r"[A-Za-z0-9._-]+", session_id) and session_id not in (".", ".."):
+        return session_id
+    digest = hashlib.sha256(session_id.encode("utf-8")).hexdigest()
+    return f"session-{digest}"
 
 
 def _sync_directory(path: Path) -> None:
