@@ -92,6 +92,13 @@ def test_setup_installs_skill_under_resolved_metadata_name(tmp_path) -> None:
     assert (tmp_path / "skills" / "canonical-skill-name" / "SKILL.md").read_text() == "hello"
     assert not (tmp_path / "skills" / "skill-1").exists()
 
+    retained = tmp_path / "skills" / "retained"
+    retained.mkdir()
+    initializer.cleanup()
+
+    assert not (tmp_path / "skills" / "canonical-skill-name").exists()
+    assert retained.is_dir()
+
 
 def test_install_closes_skill_body_when_archive_copy_fails(tmp_path) -> None:
     body = _CloseTrackingBody(b"archive-too-large")

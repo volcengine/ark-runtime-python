@@ -3,11 +3,9 @@
 
 from __future__ import annotations
 
-import hashlib
 import logging
 import os
 import random
-import re
 import socket
 import threading
 import time
@@ -239,7 +237,7 @@ class EnvironmentWorker:
                         raise poller.error
                     return
                 try:
-                    self._handle_item(_claimed_work_from_item(item), use_workdir_as_session=False)
+                    self._handle_item(_claimed_work_from_item(item))
                 except (IdleTimeout, SessionTerminated):
                     pass
                 except Exception as exc:  # noqa: BLE001 - continue polling after a bad work item.
@@ -250,11 +248,11 @@ class EnvironmentWorker:
     def handle_item(self, options: HandleItemOptions) -> None:
         work = self._claimed_work_from_options(options)
         try:
-            self._handle_item(work, use_workdir_as_session=True)
+            self._handle_item(work)
         except (IdleTimeout, SessionTerminated):
             return
 
-    def _handle_item(self, work: _ClaimedWork, *, use_workdir_as_session: bool) -> None:
+    def _handle_item(self, work: _ClaimedWork) -> None:
         if not work.environment_id:
             work.environment_id = self.options.environment_id or os.environ.get("MA_ENVIRONMENT_ID", "")
         heartbeat_stop = threading.Event()
@@ -262,8 +260,9 @@ class EnvironmentWorker:
         heartbeat_done = threading.Event()
         heartbeat_cause = {"value": ""}
         heartbeat = None
+        initializer = None
         try:
-            workdir = self._workdir_for(work.session_id, use_workdir_as_session)
+            workdir = self._workdir()
             heartbeat_thread = threading.Thread(
                 target=self._heartbeat_loop,
                 args=(work, heartbeat_stop, heartbeat_done, heartbeat_cause),
@@ -278,14 +277,15 @@ class EnvironmentWorker:
                 raise ValueError("session response is empty")
             if not session.id:
                 session.id = work.session_id
-            Initializer(
+            initializer = Initializer(
                 self.api,
                 InitializerOptions(workdir=workdir, logger=self.options.logger),
-            ).setup(session)
+            )
+            initializer.setup(session)
             if work_stop.is_set():
                 return
             tool_context = self._tool_context(workdir, work_stop)
-            store = FileToolResultStore(workdir)
+            store = FileToolResultStore(workdir, work.session_id)
             runner = SessionToolRunner(
                 self.api,
                 work.session_id,
@@ -303,6 +303,11 @@ class EnvironmentWorker:
             )
             runner.run()
         finally:
+            if initializer is not None:
+                try:
+                    initializer.cleanup()
+                except OSError as exc:
+                    self.options.logger.warning("cleanup session skills failed: %s", exc)
             heartbeat_stop.set()
             if heartbeat is not None:
                 heartbeat_done.wait(timeout=DEFAULT_HEARTBEAT_SECONDS + 1)
@@ -400,14 +405,11 @@ class EnvironmentWorker:
             cancel_event=cancel_event,
         )
 
-    def _workdir_for(self, session_id: str, use_workdir_as_session: bool) -> str:
+    def _workdir(self) -> str:
+        """Return the shared worker workdir used for tool cwd and installed skills."""
         root = str(Path(self.options.workdir or ".").resolve())
-        if use_workdir_as_session:
-            Path(root).mkdir(parents=True, exist_ok=True)
-            return root
-        workdir = str(Path(root) / _session_workdir_name(session_id))
-        Path(workdir).mkdir(parents=True, exist_ok=True)
-        return workdir
+        Path(root).mkdir(parents=True, exist_ok=True)
+        return root
 
     def _claimed_work_from_options(self, options: HandleItemOptions) -> _ClaimedWork:
         work_id = options.work_id or os.environ.get("MA_WORK_ID", "")
@@ -462,13 +464,6 @@ def _should_stop_item(heartbeat_cause: str) -> bool:
         "heartbeat_lost",
         "heartbeat_permanent_failure",
     }
-
-
-def _session_workdir_name(session_id: str) -> str:
-    if re.fullmatch(r"[A-Za-z0-9._-]+", session_id) and session_id not in (".", ".."):
-        return session_id
-    digest = hashlib.sha256(session_id.encode("utf-8")).hexdigest()
-    return f"session-{digest}"
 
 
 class _CombinedStopEvent:
