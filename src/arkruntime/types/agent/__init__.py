@@ -57,4 +57,4 @@ __all__ = [
 ]
 
 # Hand-written extras (preserved across regen via Makefile rsync --exclude=*_shim.py).
-from ._init_extras_shim import *  # noqa: F401,F403,E402
+from ._init_extras_shim import *  # noqa: F401,F403
