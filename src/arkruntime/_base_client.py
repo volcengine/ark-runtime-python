@@ -184,7 +184,7 @@ class BaseClient(Generic[_HttpxClientT]):
 
     @property
     def user_agent(self) -> str:
-        return "volc-sdk-python/" + VERSION
+        return "ark-runtime-python/" + VERSION
 
     def default_headers(self) -> Dict[str, str]:
         return {

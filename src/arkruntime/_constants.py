@@ -4,7 +4,8 @@
 
 import httpx
 
-VERSION = "1.0.0"
+from ._version import VERSION as VERSION
+
 BASE_URL = "https://ark.cn-beijing.volces.com/api/v3"
 
 
