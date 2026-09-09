@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import math
 import os
 import random
 import time
@@ -30,7 +31,8 @@ from .types import (
     WorkItem,
 )
 
-RETRYABLE_STATUS_CODES = {408, 429}
+RETRYABLE_STATUS_CODES = {408, 409, 429}
+RETRY_COUNT_HEADER = "X-Stainless-Retry-Count"
 SKILL_TYPE_SKILL_HUB = "skill_hub"
 SKILL_HUB_BASE_URL = "https://skills.volces.com/v1/skills"
 MAX_SKILL_HUB_METADATA_BYTES = 1 << 20
@@ -55,7 +57,7 @@ class ClientAPI:
         environment_id: str,
         *,
         worker_id: str = "",
-        block_ms: int = 999,
+        block_ms: Optional[int] = 999,
         reclaim_older_than_ms: int = 0,
     ) -> Optional[WorkItem]:
         if not environment_id:
@@ -65,7 +67,7 @@ class ClientAPI:
             worker_id=worker_id,
             block_ms=block_ms,
             reclaim_older_than_ms=reclaim_older_than_ms,
-            timeout=max(5.0, block_ms / 1000.0 + 5.0),
+            timeout=max(5.0, (block_ms or 0) / 1000.0 + 5.0),
         )
         if item is None:
             return None
@@ -296,31 +298,39 @@ class ClientAPI:
         max_retries: Optional[int] = None,
     ) -> Dict[str, Any]:
         retry_count = getattr(self.client, "max_retries", 0) if max_retries is None else max_retries
+        if isinstance(retry_count, float) and math.isinf(retry_count):
+            retry_count = 2**63 - 1
+        elif isinstance(retry_count, float) and math.isnan(retry_count):
+            retry_count = 0
         retry_count = max(0, int(retry_count or 0))
         for attempt in range(retry_count + 1):
             try:
                 request_options: Dict[str, Any] = {}
                 if timeout is not None:
                     request_options["timeout"] = timeout
+                request_headers = httpx.Headers(self._headers(headers))
+                if RETRY_COUNT_HEADER not in request_headers:
+                    request_headers[RETRY_COUNT_HEADER] = str(attempt)
                 resp = self.client._client.request(
                     method,
                     self._url(path),
                     params=params or None,
-                    headers=self._headers(headers),
+                    headers=request_headers,
                     json=json,
                     **request_options,
                 )
             except (httpx.TimeoutException, httpx.TransportError) as exc:
                 if attempt < retry_count:
-                    self._sleep_retry(attempt)
+                    self._sleep_retry(attempt, None)
                     continue
                 raise APIError(0, str(exc), "") from exc
-            if _should_retry(resp.status_code) and attempt < retry_count:
+            if _should_retry(resp) and attempt < retry_count:
                 if not resp.is_closed:
                     with contextlib.suppress(Exception):
                         resp.read()
+                response_headers = resp.headers
                 resp.close()
-                self._sleep_retry(attempt)
+                self._sleep_retry(attempt, response_headers)
                 continue
             break
         self._raise_for_response(resp)
@@ -354,9 +364,13 @@ class ClientAPI:
             raise APIError(resp.status_code, str(exc), request_id) from exc
         raise APIError(resp.status_code, str(err), request_id) from err
 
-    def _sleep_retry(self, attempt: int) -> None:
+    def _sleep_retry(self, attempt: int, response_headers: Optional[httpx.Headers]) -> None:
+        retry_after = self.client._parse_retry_after_header(response_headers)
+        if retry_after is not None and 0 < retry_after <= 60:
+            time.sleep(retry_after)
+            return
         delay = min(8.0, 0.5 * (2**attempt))
-        time.sleep(delay * random.uniform(0.75, 1.25))
+        time.sleep(delay * random.uniform(0.75, 1.0))
 
 
 class _ClosingStream:
@@ -387,8 +401,14 @@ def _escape(value: str) -> str:
     return quote(value, safe="")
 
 
-def _should_retry(status_code: int) -> bool:
-    return status_code in RETRYABLE_STATUS_CODES or status_code >= 500
+def _should_retry(response: httpx.Response) -> bool:
+    should_retry = response.headers.get("x-should-retry")
+    should_retry = should_retry.lower() if should_retry else None
+    if should_retry == "true":
+        return True
+    if should_retry == "false":
+        return False
+    return response.status_code in RETRYABLE_STATUS_CODES or response.status_code >= 500
 
 
 def _model_to_dict(value: Any) -> Dict[str, Any]:

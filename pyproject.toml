@@ -23,6 +23,9 @@ dependencies = [
   "volcengine-python-sdk>=5.0.20",
 ]
 
+[project.optional-dependencies]
+mcp = ["mcp>=1.0,<3; python_version >= '3.10'"]
+
 [project.urls]
 Homepage = "https://github.com/volcengine/ark-runtime-python"
 
@@ -42,6 +45,7 @@ dev = [
     "pytest-cov>=5",
     "pytest-xdist>=3",
     "respx>=0.21",
+    "trio>=0.22",
 ]
 
 [tool.setuptools]

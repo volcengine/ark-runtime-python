@@ -5,9 +5,10 @@ from third-party open-source projects.
 
 ## Anthropic self-hosted worker SDK
 
-Portions of the self-hosted worker lifecycle and local agent tool
-implementations under `src/arkruntime/selfhosted` are structurally adapted
-from Anthropic's self-hosted worker SDK implementations:
+Portions of the self-hosted worker lifecycle, local agent tool, and client-side
+MCP helper implementations under `src/arkruntime/selfhosted` and
+`src/arkruntime/mcp.py` are structurally adapted from Anthropic's SDK
+implementations:
 
 - https://github.com/anthropics/anthropic-sdk-python
 - https://github.com/anthropics/anthropic-sdk-go

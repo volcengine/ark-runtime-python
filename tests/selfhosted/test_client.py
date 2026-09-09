@@ -3,10 +3,12 @@
 
 from __future__ import annotations
 
+import math
+
 import httpx
 
 from arkruntime import Ark
-from arkruntime.selfhosted import ClientAPI, SkillRef
+from arkruntime.selfhosted import APIError, ClientAPI, SkillRef
 from arkruntime.selfhosted.types import work_session_id
 
 
@@ -73,6 +75,18 @@ def test_poll_work_preserves_nested_session_data() -> None:
     assert item.data.id == work["data"]["id"]
     assert item.data.type == "session"
     assert work_session_id(item) == work["data"]["id"]
+
+
+def test_poll_work_can_omit_block_ms_for_nonblocking_drain() -> None:
+    def handle(request: httpx.Request) -> httpx.Response:
+        assert "block_ms" not in request.url.params
+        return httpx.Response(httpx.codes.OK, json={})
+
+    client = _ark_client(httpx.MockTransport(handle))
+    try:
+        assert ClientAPI(client).poll_work("env-1", block_ms=None) is None
+    finally:
+        client.close()
 
 
 def test_poll_work_rejects_payload_outside_generated_contract() -> None:
@@ -308,6 +322,7 @@ def test_heartbeat_has_lease_bounded_timeout_and_no_hidden_retry() -> None:
     def handle(request: httpx.Request) -> httpx.Response:
         requests.append(request)
         assert request.extensions["timeout"]["read"] == 15.0
+        assert request.headers["x-stainless-retry-count"] == "0"
         return httpx.Response(httpx.codes.INTERNAL_SERVER_ERROR, json={"error": "temporary"})
 
     client = _ark_client(httpx.MockTransport(handle), max_retries=3)
@@ -327,3 +342,58 @@ def test_heartbeat_has_lease_bounded_timeout_and_no_hidden_retry() -> None:
         client.close()
 
     assert len(requests) == 1
+
+
+def test_raw_request_supports_infinite_retry_configuration() -> None:
+    requests = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(httpx.codes.OK, json={})
+
+    client = _ark_client(httpx.MockTransport(handle), max_retries=math.inf)  # type: ignore[arg-type]
+    try:
+        assert ClientAPI(client)._request_json("GET", "/test") == {}
+    finally:
+        client.close()
+
+    assert len(requests) == 1
+
+
+def test_raw_request_retry_header_is_case_insensitive() -> None:
+    requests = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        if len(requests) == 1:
+            return httpx.Response(400, headers={"X-Should-Retry": "TRUE", "Retry-After-Ms": "1"})
+        return httpx.Response(httpx.codes.OK, json={})
+
+    client = _ark_client(httpx.MockTransport(handle), max_retries=1)
+    try:
+        assert ClientAPI(client)._request_json("GET", "/test") == {}
+    finally:
+        client.close()
+
+    assert len(requests) == 2
+
+
+def test_raw_request_retries_conflict_by_default() -> None:
+    requests = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(409, json={"error": {"message": "conflict"}})
+
+    client = _ark_client(httpx.MockTransport(handle), max_retries=1)
+    try:
+        try:
+            ClientAPI(client)._request_json("GET", "/test")
+        except APIError:
+            pass
+        else:
+            raise AssertionError("expected request failure")
+    finally:
+        client.close()
+
+    assert len(requests) == 2

@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import asyncio
+import email.utils
 import json
 import logging
 import time
@@ -199,10 +200,14 @@ class BaseClient(Generic[_HttpxClientT]):
     def _make_sse_decoder(self) -> SSEDecoder | SSEBytesDecoder:
         return SSEDecoder()
 
-    def _build_headers(self, options: RequestOptions) -> httpx.Headers:
+    def _build_headers(self, options: RequestOptions, *, retries_taken: int = 0) -> httpx.Headers:
         custom_headers = options.headers or {}
-        headers_dict = {**self.default_headers(), **custom_headers}
+        headers_dict = {
+            **self.default_headers(),
+            "x-stainless-retry-count": str(retries_taken),
+        }
         headers = httpx.Headers(headers_dict)
+        headers.update(custom_headers)
 
         return headers
 
@@ -237,7 +242,7 @@ class BaseClient(Generic[_HttpxClientT]):
             else:
                 raise RuntimeError(f"Unexpected JSON data type, {type(body)}, cannot merge with `extra_body`")
 
-        headers = self._build_headers(options)
+        headers = self._build_headers(options, retries_taken=retries_taken)
         params = options.params
         content_type = headers.get("Content-Type")
         files = options.files
@@ -338,9 +343,13 @@ class BaseClient(Generic[_HttpxClientT]):
         options: RequestOptions,
         response_headers: Optional[httpx.Headers] = None,
     ) -> float:
-        max_retries = options.max_retries if options.max_retries else self.max_retries
+        max_retries = options.get_max_retries(self.max_retries)
 
-        nb_retries = max_retries - remaining_retries
+        retry_after = self._parse_retry_after_header(response_headers)
+        if retry_after is not None and 0 < retry_after <= 60:
+            return retry_after
+
+        nb_retries = min(max(max_retries - remaining_retries - 1, 0), 1000)
 
         # Apply exponential backoff, but not more than the max.
         sleep_seconds = min(INITIAL_RETRY_DELAY * pow(2.0, nb_retries), MAX_RETRY_DELAY)
@@ -350,9 +359,31 @@ class BaseClient(Generic[_HttpxClientT]):
         timeout = sleep_seconds * jitter
         return timeout if timeout >= 0 else 0
 
+    def _parse_retry_after_header(self, response_headers: Optional[httpx.Headers] = None) -> Optional[float]:
+        if response_headers is None:
+            return None
+
+        try:
+            retry_after_ms = response_headers.get("retry-after-ms")
+            return float(retry_after_ms) / 1000
+        except (TypeError, ValueError):
+            pass
+
+        retry_after = response_headers.get("retry-after")
+        try:
+            return float(retry_after)
+        except (TypeError, ValueError):
+            pass
+
+        retry_date = email.utils.parsedate_tz(retry_after)
+        if retry_date is None:
+            return None
+        return float(email.utils.mktime_tz(retry_date) - time.time())
+
     def _should_retry(self, response: httpx.Response) -> bool:
         # Note: this is not a standard header
         should_retry_header = response.headers.get("x-should-retry")
+        should_retry_header = should_retry_header.lower() if should_retry_header else None
 
         # If the server explicitly says whether or not to retry, obey.
         if should_retry_header == "true":
@@ -503,7 +534,8 @@ class SyncAPIClient(BaseClient):
         stream_cls: type[_StreamT] | None,
     ) -> ResponseT | _StreamT:
         retries = self._remaining_retries(remaining_retries, options)
-        request = self._build_request(options)
+        max_retries = options.get_max_retries(self.max_retries)
+        request = self._build_request(options, retries_taken=max_retries - retries)
         req_id = request.headers.get(CLIENT_REQUEST_HEADER, "")
         try:
             response = self._client.send(
@@ -703,6 +735,7 @@ class SyncAPIClient(BaseClient):
         stream: bool = False,
         stream_cls: type[_StreamT] | None = None,
     ) -> ResponseT | _StreamT:
+        options = {**options, "max_retries": 0}
         opts = RequestOptions.construct(  # type: ignore
             method="post",
             url=path,
@@ -916,6 +949,7 @@ class AsyncAPIClient(BaseClient):
         stream: bool = False,
         stream_cls: type[_AsyncStreamT] | None = None,
     ) -> ResponseT | _AsyncStreamT:
+        options = {**options, "max_retries": 0}
         opts = RequestOptions.construct(
             method="post",
             url=path,
@@ -984,7 +1018,8 @@ class AsyncAPIClient(BaseClient):
         stream_cls: type[_AsyncStreamT] | None,
     ) -> ResponseT | _AsyncStreamT:
         retries = self._remaining_retries(remaining_retries, options)
-        request = self._build_request(options)
+        max_retries = options.get_max_retries(self.max_retries)
+        request = self._build_request(options, retries_taken=max_retries - retries)
         req_id = request.headers.get(CLIENT_REQUEST_HEADER, "")
         try:
             response = await self._client.send(
