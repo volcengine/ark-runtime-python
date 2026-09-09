@@ -14,8 +14,16 @@ from arkruntime._models import BaseModel
 class ModelOverrides(BaseModel):
     """
     Session 创建时允许临时覆写的模型运行参数。
+
+    内部字段省略表示继承 base Agent 的对应值。
     """
 
+    id: Optional[str] = None
+    """
+    模型 semantic 覆写，形如 `"doubao-seed-2-0-pro-260215"`；服务端按最右
+    侧一个 `-` 拆成 (name, version) 冻结进本 Session 的 Agent 快照，不回写
+    base Agent。解析失败返回 400，模型未开通返回 403 `ModelNotOpen`。
+    """
     speed: Optional[str] = None
     """
     模型速度档位。
@@ -27,4 +35,8 @@ class ModelOverrides(BaseModel):
     reasoning_effort: Optional[str] = None
     """
     推理努力程度。
+    """
+    service_tier: Optional[str] = None
+    """
+    服务档位。
     """

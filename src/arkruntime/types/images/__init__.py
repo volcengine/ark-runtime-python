@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+from .background import Background
 from .bounding_box import BoundingBox
 from .create_image_generation_request import CreateImageGenerationRequest
 from .image_data_item import ImageDataItem
@@ -25,6 +26,7 @@ from .tool_usage import ToolUsage
 from .usage import Usage
 
 __all__ = [
+    "Background",
     "BoundingBox",
     "CreateImageGenerationRequest",
     "ImageDataItem",

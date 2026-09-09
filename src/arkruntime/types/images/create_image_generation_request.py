@@ -6,10 +6,11 @@
 
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from arkruntime._models import BaseModel
 
+from .background import Background
 from .optimize_prompt_options import OptimizePromptOptions
 from .output_format import OutputFormat
 from .response_format import ResponseFormat
@@ -23,13 +24,13 @@ class CreateImageGenerationRequest(BaseModel):
     """
     The model identifier to use.
     """
-    prompt: str
+    prompt: Optional[str] = None
     """
-    Text prompt describing the desired image.
+    Text prompt describing the desired image. Required for standard generation; may be omitted for automatic layer decomposition when `layer_decomposition=true`.
     """
-    image: Optional[List[str]] = None
+    image: Optional[Union[str, List[str]]] = None
     """
-    Reference / edit images. Each entry is a URL or a `data:` URI.
+    Reference / edit images, as a single URL or `data:` URI, or an array of them.
     """
     stream: Optional[bool] = None
     """
@@ -80,6 +81,10 @@ class CreateImageGenerationRequest(BaseModel):
     output_format: Optional[OutputFormat] = None
     """
     Container/codec for the generated image bytes.
+    """
+    background: Optional[Background] = None
+    """
+    Output background. Defaults to `opaque`. `transparent` requires exactly one PNG reference image with an alpha channel and PNG output.
     """
     layer_decomposition: Optional[bool] = None
     """
