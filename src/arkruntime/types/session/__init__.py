@@ -8,11 +8,13 @@ from __future__ import annotations
 
 from .agent_identifier import AgentIdentifier
 from .agent_ref import AgentRef
+from .agent_with_upgrades import AgentWithUpgrades
 from .base64_document_source import Base64DocumentSource
 from .base64_image_source import Base64ImageSource
 from .cache_creation import CacheCreation
 from .create_session_request import CreateSessionRequest
 from .create_session_resource_request import CreateSessionResourceRequest
+from .create_session_upgrade_request import CreateSessionUpgradeRequest
 from .delete_session_response import DeleteSessionResponse
 from .document_source import DocumentSource
 from .environment_config_override import EnvironmentConfigOverride
@@ -20,6 +22,7 @@ from .environment_networking_config import EnvironmentNetworkingConfig
 from .environment_packages_config import EnvironmentPackagesConfig
 from .environment_tos_config import EnvironmentTosConfig
 from .environment_with_overrides import EnvironmentWithOverrides
+from .environment_with_upgrades import EnvironmentWithUpgrades
 from .file_document_source import FileDocumentSource
 from .file_image_source import FileImageSource
 from .image_source import ImageSource
@@ -72,6 +75,7 @@ from .managed_agents_user_tool_result_event_params import (
     ManagedAgentsUserToolResultEventParams,
 )
 from .model_overrides import ModelOverrides
+from .model_upgrades import ModelUpgrades
 from .plain_text_document_source import PlainTextDocumentSource
 from .search_result_citations import SearchResultCitations
 from .search_result_content import SearchResultContent
@@ -94,11 +98,13 @@ from .url_image_source import UrlImageSource
 __all__ = [
     "AgentIdentifier",
     "AgentRef",
+    "AgentWithUpgrades",
     "Base64DocumentSource",
     "Base64ImageSource",
     "CacheCreation",
     "CreateSessionRequest",
     "CreateSessionResourceRequest",
+    "CreateSessionUpgradeRequest",
     "DeleteSessionResponse",
     "DocumentSource",
     "EnvironmentConfigOverride",
@@ -106,6 +112,7 @@ __all__ = [
     "EnvironmentPackagesConfig",
     "EnvironmentTosConfig",
     "EnvironmentWithOverrides",
+    "EnvironmentWithUpgrades",
     "FileDocumentSource",
     "FileImageSource",
     "ImageSource",
@@ -142,6 +149,7 @@ __all__ = [
     "ManagedAgentsUserToolConfirmationEventParams",
     "ManagedAgentsUserToolResultEventParams",
     "ModelOverrides",
+    "ModelUpgrades",
     "PlainTextDocumentSource",
     "SearchResultCitations",
     "SearchResultContent",

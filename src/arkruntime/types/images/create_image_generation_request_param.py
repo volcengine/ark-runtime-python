@@ -6,10 +6,11 @@
 
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from typing_extensions import Required, TypedDict
 
+from .background import Background
 from .optimize_prompt_options_param import OptimizePromptOptionsParam
 from .output_format import OutputFormat
 from .response_format import ResponseFormat
@@ -24,11 +25,11 @@ class CreateImageGenerationRequestParam(TypedDict, total=False):
     model: Required[str]
     """The model identifier to use."""
 
-    prompt: Required[str]
-    """Text prompt describing the desired image."""
+    prompt: Optional[str]
+    """Text prompt describing the desired image. Required for standard generation; may be omitted for automatic layer decomposition when `layer_decomposition=true`."""
 
-    image: Optional[List[str]]
-    """Reference / edit images. Each entry is a URL or a `data:` URI."""
+    image: Optional[Union[str, List[str]]]
+    """Reference / edit images, as a single URL or `data:` URI, or an array of them."""
 
     stream: Optional[bool]
     """Stream partial images as they are generated (server-sent events)."""
@@ -65,6 +66,9 @@ class CreateImageGenerationRequestParam(TypedDict, total=False):
 
     output_format: Optional[OutputFormat]
     """Container/codec for the generated image bytes."""
+
+    background: Optional[Background]
+    """Output background. Defaults to `opaque`. `transparent` requires exactly one PNG reference image with an alpha channel and PNG output."""
 
     layer_decomposition: Optional[bool]
     """

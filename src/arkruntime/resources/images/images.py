@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import httpx
 
@@ -14,6 +14,7 @@ from ..._streaming import AsyncStream, Stream
 from ..._types import Body, Headers, Query
 
 # AUTOGEN-START create-imports
+from ...types.images.background import Background
 from ...types.images.image_generation_response import ImageGenerationResponse
 from ...types.images.image_generation_stream_event import ImageGenerationStreamEvent
 from ...types.images.optimize_prompt_options_param import OptimizePromptOptionsParam
@@ -36,8 +37,8 @@ class Images(SyncAPIResource):
         *,
         # AUTOGEN-START create-kwargs
         model: str,
-        prompt: str,
-        image: Optional[List[str]] = None,
+        prompt: Optional[str] = None,
+        image: Optional[Union[str, List[str]]] = None,
         stream: Optional[bool] = None,
         response_format: Optional[ResponseFormat] = None,
         seed: Optional[int] = None,
@@ -50,6 +51,7 @@ class Images(SyncAPIResource):
         optimize_prompt_options: Optional[OptimizePromptOptionsParam] = None,
         tools: Optional[List[ToolParam]] = None,
         output_format: Optional[OutputFormat] = None,
+        background: Optional[Background] = None,
         layer_decomposition: Optional[bool] = None,
         # AUTOGEN-END create-kwargs
         extra_headers: Headers | None = None,
@@ -76,6 +78,7 @@ class Images(SyncAPIResource):
                 "optimize_prompt_options": optimize_prompt_options,
                 "tools": tools,
                 "output_format": output_format,
+                "background": background,
                 "layer_decomposition": layer_decomposition,
                 # AUTOGEN-END create-body
             },
@@ -97,8 +100,8 @@ class AsyncImages(AsyncAPIResource):
         *,
         # AUTOGEN-START create-kwargs
         model: str,
-        prompt: str,
-        image: Optional[List[str]] = None,
+        prompt: Optional[str] = None,
+        image: Optional[Union[str, List[str]]] = None,
         stream: Optional[bool] = None,
         response_format: Optional[ResponseFormat] = None,
         seed: Optional[int] = None,
@@ -111,6 +114,7 @@ class AsyncImages(AsyncAPIResource):
         optimize_prompt_options: Optional[OptimizePromptOptionsParam] = None,
         tools: Optional[List[ToolParam]] = None,
         output_format: Optional[OutputFormat] = None,
+        background: Optional[Background] = None,
         layer_decomposition: Optional[bool] = None,
         # AUTOGEN-END create-kwargs
         extra_headers: Headers | None = None,
@@ -137,6 +141,7 @@ class AsyncImages(AsyncAPIResource):
                 "optimize_prompt_options": optimize_prompt_options,
                 "tools": tools,
                 "output_format": output_format,
+                "background": background,
                 "layer_decomposition": layer_decomposition,
                 # AUTOGEN-END create-body
             },

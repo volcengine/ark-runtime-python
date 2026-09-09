@@ -9,15 +9,10 @@ from __future__ import annotations
 from enum import Enum
 
 
-class SessionStatus(str, Enum):
+class Background(str, Enum):
     """
-    Session runtime 状态。
+    Background of the generated image.
     """
 
-    idle = "idle"
-    running = "running"
-    terminated = "terminated"
-    rescheduling = "rescheduling"
-    initializing = "initializing"
-    failed = "failed"
-    upgrading = "upgrading"
+    opaque = "opaque"
+    transparent = "transparent"
