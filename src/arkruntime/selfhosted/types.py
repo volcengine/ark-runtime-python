@@ -215,15 +215,24 @@ class ContentBlock:
     text: str = ""
     media_type: str = ""
     data: Any = None
+    source: Any = None
+    title: str = ""
+    context: str = ""
 
     def to_dict(self) -> Dict[str, Any]:
         out: Dict[str, Any] = {"type": self.type}
-        if self.text:
+        if self.type == "text" or self.text:
             out["text"] = self.text
         if self.media_type:
             out["media_type"] = self.media_type
         if self.data is not None:
             out["data"] = self.data
+        if self.source is not None:
+            out["source"] = self.source
+        if self.title:
+            out["title"] = self.title
+        if self.context:
+            out["context"] = self.context
         return out
 
 
@@ -272,6 +281,9 @@ class Event:
                         text=str(block.get("text") or ""),
                         media_type=str(block.get("media_type") or ""),
                         data=block.get("data"),
+                        source=block.get("source"),
+                        title=str(block.get("title") or ""),
+                        context=str(block.get("context") or ""),
                     )
                 )
         return cls(

@@ -3,6 +3,13 @@
 
 from .client import ClientAPI
 from .envinit import Initializer, InitializerOptions
+from .mcp import (
+    MCPCallToolResult,
+    MCPClient,
+    MCPContent,
+    MCPResource,
+    MCPToolDefinition,
+)
 from .session_tool_runner import SessionToolRunner, SessionToolRunnerOptions
 from .tool_result_store import FileToolResultStore
 from .tools import Tool, ToolContext, ToolResult, ToolSet, default_toolset
@@ -34,6 +41,11 @@ __all__ = [
     "Initializer",
     "InitializerOptions",
     "ListEventsResponse",
+    "MCPCallToolResult",
+    "MCPClient",
+    "MCPContent",
+    "MCPResource",
+    "MCPToolDefinition",
     "Session",
     "SessionToolRunner",
     "SessionToolRunnerOptions",

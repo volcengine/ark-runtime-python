@@ -26,9 +26,9 @@ def _path(environment_id: str, suffix: str) -> str:
     return f"/environments/{quote(environment_id, safe='')}/work/{suffix.lstrip('/')}"
 
 
-def _query(*, block_ms: int = 0, reclaim_older_than_ms: int = 0) -> dict:
+def _query(*, block_ms: Optional[int] = 0, reclaim_older_than_ms: int = 0) -> dict:
     query = {}
-    if block_ms > 0:
+    if block_ms is not None and block_ms > 0:
         query["block_ms"] = block_ms
     if reclaim_older_than_ms > 0:
         query["reclaim_older_than_ms"] = reclaim_older_than_ms
@@ -48,7 +48,7 @@ class EnvironmentWork(SyncAPIResource):
         environment_id: str,
         *,
         worker_id: str = "",
-        block_ms: int = 999,
+        block_ms: Optional[int] = 999,
         reclaim_older_than_ms: int = 0,
         extra_headers=None,
         extra_query=None,
@@ -144,7 +144,7 @@ class AsyncEnvironmentWork(AsyncAPIResource):
         environment_id: str,
         *,
         worker_id: str = "",
-        block_ms: int = 999,
+        block_ms: Optional[int] = 999,
         reclaim_older_than_ms: int = 0,
         extra_headers=None,
         extra_query=None,
