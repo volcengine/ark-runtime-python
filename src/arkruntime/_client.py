@@ -76,7 +76,7 @@ class Ark(SyncAPIClient):
                 sk: secret access key
                 api_key: api key，this api key will not be refreshed
                 timeout: timeout of client. default httpx.Timeout(timeout=60.0, connect=60.0)
-                max_retries: times of retry when request failed. default 1
+                max_retries: times of retry when request failed. default 2
                 http_client: specify customized http_client
             Returns:
                 ark client
@@ -229,7 +229,7 @@ class AsyncArk(AsyncAPIClient):
             sk: secret access key
             api_key: api key，this api key will not be refreshed
             timeout: timeout of client. default httpx.Timeout(timeout=60.0, connect=60.0)
-            max_retries: times of retry when request failed. default 1
+            max_retries: times of retry when request failed. default 2
             http_client: specify customized http_client
         Returns:
             async ark client

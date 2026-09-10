@@ -317,6 +317,72 @@ See the [examples/](./examples) directory for runnable scripts:
 
 MCP examples are provided for both clouds and explicitly send `ark-beta-mcp: true`. Other built-in-tool examples are CN-only and show their required beta headers.
 
+## Self-hosted MCP tools
+
+The self-hosted worker core exposes a protocol-independent `MCPClient`
+interface without requiring the official MCP package. Install the optional
+adapter on Python 3.10 or newer when using an official MCP `ClientSession`:
+
+```bash
+pip install 'arkruntime[mcp]'
+```
+
+The official adapter runs through an AnyIO `BlockingPortal`, so it works with
+both asyncio and Trio backends. Create the portal and MCP `ClientSession` in
+the same AnyIO lifecycle, then use `custom_tool_items()` for the Agent
+declaration and `mcp_tools()` for the worker registry. Keep both alive for the
+entire worker lifetime. See the runnable
+[`self_hosted_mcp_worker`](./examples/self_hosted_mcp_worker) example.
+
+The adapter wraps an already connected MCP `ClientSession`, so applications may
+use stdio or another transport supported by their MCP client. One client
+session is reused across all Managed Agents Sessions handled by the worker;
+calls do not automatically include a Managed Agents `session_id` or `work_id`,
+and Session idle/deletion is not an MCP lifecycle notification. Use stateless
+tools or implement explicit tenant/session isolation in the MCP server.
+
+Applications that cannot install the optional package may implement
+`arkruntime.selfhosted.MCPClient` directly. The core SDK continues to support
+Python 3.8, while the official MCP adapter requires Python 3.10 or newer.
+
+Managed Agents currently accepts the top-level JSON Schema fields `type`,
+`properties`, and `required`. The helper keeps those fields structured, inlines
+local `$defs` and `definitions` references used by properties, and appends other
+top-level constraints as compact JSON to the tool description. The MCP server
+remains the authoritative validator when the worker executes the call. Agent
+tool descriptions, including appended constraints, must fit within 10,000
+characters.
+
+Fetch every `tools/list` page, then use the exact same selected definitions for
+the Agent and worker. Managed Agents currently accepts at most eight custom
+tools per Agent. Tool discovery happens at worker startup, so update the Agent
+while it is idle and restart the worker whenever the MCP server changes its
+tool list.
+
+Custom tools do not use Managed Agents permission policies. The worker executes
+each matching call, so implement approval, authorization, and operation
+allowlists in the MCP server or a wrapper tool. Only wrap trusted servers,
+avoid names that collide with built-in Agent tools, add prefixes when multiple
+servers expose the same name, and configure an MCP client timeout. Client-side
+MCP servers run with the worker's OS, filesystem, and network permissions, not
+in a Managed Agents sandbox. Run them with least privilege and a minimal
+environment, and do not pass `ARK_API_KEY` to an MCP subprocess. Tool names,
+descriptions, inputs, and results enter the model context and must be treated
+as untrusted content.
+
+### Tool result support
+
+The worker preserves MCP `isError` and supports text, `image/jpeg`,
+`image/png`, `image/gif`, and `image/webp` image blocks. Embedded resources may
+contain the same image MIME types, `application/pdf`, or text whose MIME type is
+absent, empty, or starts with `text/`. When a result has no content blocks but
+has `structuredContent`, the helper serializes it as compact JSON text.
+
+Audio, resource links, unknown content types, and other resource MIME types
+become an error result. If a result mixes supported and unsupported blocks, the
+whole converted result is an error; the supported blocks are not returned
+separately.
+
 ## Requirements
 
 - Python >= 3.8

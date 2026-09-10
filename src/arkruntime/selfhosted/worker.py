@@ -12,7 +12,11 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Optional
+from uuid import uuid4
 
+import httpx
+
+from .._exceptions import ArkAPIError
 from .envinit import Initializer, InitializerOptions
 from .session_tool_runner import SessionToolRunner, SessionToolRunnerOptions
 from .tool_result_store import FileToolResultStore
@@ -23,6 +27,7 @@ from .types import (
     EXPECTED_LAST_HEARTBEAT_NO_HEARTBEAT,
     WORK_STATE_STOPPED,
     WORK_STATE_STOPPING,
+    APIError,
     IdleTimeout,
     SessionTerminated,
     WorkItem,
@@ -33,13 +38,14 @@ from .types import (
 
 DEFAULT_POLL_BLOCK_MS = 999
 POLL_BACKOFF_CAP_SECONDS = 60.0
+_POLLER_TRANSIENT_ERRORS = (httpx.HTTPError, ArkAPIError, APIError)
 
 
 @dataclass
 class WorkPollerOptions:
     environment_id: str
     worker_id: str = ""
-    block_ms: int = DEFAULT_POLL_BLOCK_MS
+    block_ms: Optional[int] = DEFAULT_POLL_BLOCK_MS
     reclaim_older_than_ms: int = 0
     drain: bool = False
     auto_stop: bool = True
@@ -86,12 +92,12 @@ class WorkPoller:
                     block_ms=self.options.block_ms,
                     reclaim_older_than_ms=self.options.reclaim_older_than_ms,
                 )
-            except Exception as exc:  # noqa: BLE001 - worker owns retry classification.
-                if is_fatal_4xx(exc):
+            except _POLLER_TRANSIENT_ERRORS as exc:
+                if _is_poller_fatal_4xx(exc):
                     self.error = exc
                     return None
                 self._failures += 1
-                sleep_seconds = _jitter(_backoff(self._failures) / 2, _backoff(self._failures))
+                sleep_seconds = _backoff(self._failures) + _jitter(0, 1)
                 self.options.logger.warning("poll work failed err=%s sleep=%.3fs", exc, sleep_seconds)
                 self._sleep(sleep_seconds)
                 continue
@@ -112,16 +118,11 @@ class WorkPoller:
                 continue
             try:
                 self.api.ack_work(item.environment_id, item.id, worker_id=self.options.worker_id)
-            except Exception as exc:  # noqa: BLE001 - poller owns retry and discard behavior.
+            except _POLLER_TRANSIENT_ERRORS as exc:
                 self.options.logger.warning("ack work failed work_id=%s err=%s", item.id, exc)
-                # ACK is the queued -> starting ownership race. A failed ACK
-                # does not prove that this worker owns the work, so it must
-                # never stop the item claimed by another worker.
-                if _is_resolved_status(exc):
+                if _is_poller_fatal_4xx(exc):
+                    self._stop_item(item, force=True)
                     continue
-                if is_fatal_4xx(exc):
-                    self.error = exc
-                    return None
                 self._backoff_discard()
                 continue
             self.current = item
@@ -161,7 +162,7 @@ class WorkPoller:
 
     def _backoff_discard(self) -> None:
         self._discards += 1
-        self._sleep(_jitter(_backoff(self._discards) / 2, _backoff(self._discards)))
+        self._sleep(_backoff(self._discards) + _jitter(0, 1))
 
     def _is_closed(self) -> bool:
         return self.closed or bool(self.options.stop_event and self.options.stop_event.is_set())
@@ -445,12 +446,22 @@ def _claimed_work_from_item(item: WorkItem) -> _ClaimedWork:
 
 
 def default_worker_id() -> str:
-    return f"{socket.gethostname()}-{os.getpid()}"
+    return f"{socket.gethostname()}-{uuid4().hex[:12]}"
 
 
 def _backoff(failures: int) -> float:
-    value = min(POLL_BACKOFF_CAP_SECONDS, 2 ** max(failures - 1, 0))
+    value = min(POLL_BACKOFF_CAP_SECONDS, 2 ** max(failures, 1))
     return float(value)
+
+
+def _is_poller_fatal_4xx(exc: BaseException) -> bool:
+    if isinstance(exc, APIError):
+        status_code = exc.status_code
+    elif isinstance(exc, ArkAPIError) and hasattr(exc, "status_code"):
+        status_code = int(exc.status_code)
+    else:
+        return False
+    return 400 <= status_code < 500 and status_code not in (408, 409, 429)
 
 
 def _is_resolved_status(exc: BaseException) -> bool:

@@ -21,6 +21,7 @@ from arkruntime.selfhosted import (
 )
 from arkruntime.selfhosted.tools import ToolContext
 from arkruntime.selfhosted.types import WorkData, is_fatal_4xx
+from arkruntime.selfhosted.worker import default_worker_id
 
 
 def _work_item(environment_id: str) -> WorkItem:
@@ -53,23 +54,47 @@ class _PollAPI:
         self.stops.append((environment_id, work_id, kwargs))
 
 
-def test_ack_conflict_does_not_stop_unowned_work() -> None:
+def test_ack_conflict_retries_without_stopping_work(monkeypatch) -> None:
     api = _PollAPI(APIError(409, "already claimed"))
     poller = WorkPoller(api, WorkPollerOptions(environment_id="env-1", drain=True))
+    sleeps = []
+    monkeypatch.setattr(poller, "_sleep", sleeps.append)
+    monkeypatch.setattr("arkruntime.selfhosted.worker.random.random", lambda: 0.5)
 
     assert poller.next() is None
     assert poller.error is None
     assert api.stops == []
+    assert sleeps == [2.5]
 
 
-def test_fatal_ack_error_stops_poller_without_stopping_work() -> None:
+def test_fatal_ack_error_force_stops_work_and_continues() -> None:
     error = APIError(403, "forbidden")
     api = _PollAPI(error)
     poller = WorkPoller(api, WorkPollerOptions(environment_id="env-1", drain=True))
 
     assert poller.next() is None
-    assert poller.error is error
-    assert api.stops == []
+    assert poller.error is None
+    assert api.stops == [("env-1", "work-1", {"force": True})]
+
+
+def test_poller_does_not_swallow_programming_errors() -> None:
+    class BrokenAPI:
+        def poll_work(self, environment_id, **kwargs):
+            raise ValueError("broken adapter")
+
+    poller = WorkPoller(BrokenAPI(), WorkPollerOptions(environment_id="env-1"))
+
+    with pytest.raises(ValueError, match="broken adapter"):
+        poller.next()
+
+
+def test_default_worker_id_is_unique_per_worker() -> None:
+    first = default_worker_id()
+    second = default_worker_id()
+
+    assert first != second
+    assert first.rsplit("-", 1)[0] == second.rsplit("-", 1)[0]
+    assert len(first.rsplit("-", 1)[1]) == 12
 
 
 class _StoppingHeartbeatAPI:
