@@ -40,3 +40,12 @@ def test_session_store_sanitizes_session_id(tmp_path) -> None:
 
     assert store.dir.parent == base
     assert store.dir.name.startswith("session-")
+
+
+def test_discard_removes_recovered_record(tmp_path) -> None:
+    store = FileToolResultStore(str(tmp_path), "session-a")
+    store.begin("call-1", Event(id="call-1", type="agent.tool_use", name="bash"))
+
+    store.discard("call-1")
+
+    assert store.recover() == ({}, {})

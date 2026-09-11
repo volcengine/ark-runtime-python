@@ -9,7 +9,7 @@ import random
 import threading
 import time
 from dataclasses import dataclass, field, replace
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Set
 
 from .tool_result_store import FileToolResultStore
 from .tools import Tool, ToolContext, ToolResult, ToolSet, error_result
@@ -23,6 +23,8 @@ from .types import (
     EVENT_TYPE_AGENT_TOOL_USE,
     EVENT_TYPE_SESSION_DELETED,
     EVENT_TYPE_SESSION_STATUS_IDLE,
+    EVENT_TYPE_SESSION_STATUS_RESCHEDULED,
+    EVENT_TYPE_SESSION_STATUS_RUNNING,
     EVENT_TYPE_SESSION_STATUS_TERMINATED,
     EVENT_TYPE_USER_CUSTOM_TOOL_RESULT,
     EVENT_TYPE_USER_TOOL_CONFIRMATION,
@@ -30,6 +32,7 @@ from .types import (
     PERMISSION_ALLOW,
     PERMISSION_DENY,
     SESSION_STOP_REASON_END_TURN,
+    SESSION_STOP_REASON_REQUIRES_ACTION,
     ContentBlock,
     Event,
     EventStreamUnsupported,
@@ -128,6 +131,7 @@ class SessionToolRunner:
         if self.options.result_store is not None:
             pending, processed = self.options.result_store.recover()
             self._state.pending_results.update(pending)
+            self._state.recovered_results.update(pending)
             self._state.processed.update(processed)
             self._state.answered.update(processed)
         if self.options.prefer_stream and hasattr(self.api, "stream_events"):
@@ -200,8 +204,8 @@ class SessionToolRunner:
 
     def _consume_list(self) -> None:
         while not self._is_stopped():
-            self._state.flush_results()
             self._state.reconcile(reconcile=False)
+            self._state.flush_results()
             self._raise_if_idle_expired()
             self._sleep_or_idle(self.options.event_poll_interval_seconds)
 
@@ -231,9 +235,14 @@ class _RunnerState:
         self.seen: Dict[str, bool] = {}
         self.answered: Dict[str, bool] = {}
         self.pending_results: Dict[str, Event] = {}
+        self.recovered_results: Set[str] = set()
         self.pending_ask: Dict[str, Event] = {}
         self.confirmations: Dict[str, Event] = {}
         self.external_tools: Dict[str, Event] = {}
+        self.session_tool_uses: Set[str] = set()
+        self.tool_uses_since_status: Set[str] = set()
+        self.blocking_event_ids: Set[str] = set()
+        self.blocking_events_known = False
         self.idle_armed_at = 0.0
         self.idle_arm_pending = False
 
@@ -281,6 +290,7 @@ class _RunnerState:
             seen_now = self.mark_event_seen(event)
             if not reconcile and not seen_now:
                 continue
+            self.observe_session_state(event)
             if seen_now and event.type != EVENT_TYPE_USER_TOOL_CONFIRMATION:
                 touched_idle = True
                 last_was_end_turn = (
@@ -298,10 +308,12 @@ class _RunnerState:
                     pending_ids[call_id] = True
             elif event.type in (EVENT_TYPE_SESSION_STATUS_TERMINATED, EVENT_TYPE_SESSION_DELETED):
                 raise SessionTerminated("session terminated")
+        self.reconcile_recovered_results()
         if touched_idle:
             self.disarm_idle()
         for event in pending:
-            if self.is_answered(tool_use_call_id(event)):
+            call_id = tool_use_call_id(event)
+            if self.is_answered(call_id) or not self.should_handle_tool_use(call_id):
                 continue
             self.handle_tool_use(event, event.type == EVENT_TYPE_AGENT_CUSTOM_TOOL_USE)
         self.release_confirmed_tool_uses()
@@ -322,6 +334,8 @@ class _RunnerState:
     def handle_stream_event(self, event: Event) -> None:
         if not self.mark_event_seen(event):
             return
+        self.observe_session_state(event)
+        self.reconcile_recovered_results()
         self.note_idle_event(event)
         self.handle_event(event)
 
@@ -351,6 +365,7 @@ class _RunnerState:
         self.answered[call_id] = True
         self.processed[call_id] = True
         self.pending_results.pop(call_id, None)
+        self.recovered_results.discard(call_id)
         self.pending_ask.pop(call_id, None)
         self.external_tools.pop(call_id, None)
         self.maybe_arm_pending_idle()
@@ -372,7 +387,7 @@ class _RunnerState:
     def has_unblocked_outstanding_tool(self, pending: Iterable[Event]) -> bool:
         for event in pending:
             call_id = tool_use_call_id(event)
-            if not call_id or self.is_answered(call_id):
+            if not call_id or self.is_answered(call_id) or not self.should_handle_tool_use(call_id):
                 continue
             if call_id in self.pending_ask or call_id in self.pending_results:
                 continue
@@ -385,6 +400,8 @@ class _RunnerState:
             return
         pending = self.pending_results.get(call_id)
         if pending is not None:
+            if call_id in self.recovered_results:
+                return
             self.send_result(call_id, event, custom, "", pending)
             return
         if not self.owns_tool(event, custom):
@@ -541,6 +558,8 @@ class _RunnerState:
 
     def flush_results(self) -> None:
         for call_id, event in list(self.pending_results.items()):
+            if call_id in self.recovered_results:
+                continue
             if self.retry_send_event(event, call_id):
                 self.mark_answered(call_id)
                 if self.runner.options.result_store is not None:
@@ -553,6 +572,54 @@ class _RunnerState:
                             event.id,
                             exc,
                         )
+        self.maybe_arm_pending_idle()
+
+    def observe_session_state(self, event: Event) -> None:
+        if event.type in (EVENT_TYPE_AGENT_TOOL_USE, EVENT_TYPE_AGENT_CUSTOM_TOOL_USE):
+            call_id = tool_use_call_id(event)
+            if call_id:
+                self.session_tool_uses.add(call_id)
+                self.tool_uses_since_status.add(call_id)
+            return
+        if event.type == EVENT_TYPE_SESSION_STATUS_IDLE:
+            self.blocking_events_known = True
+            self.blocking_event_ids = set()
+            if event.stop_reason_type() == SESSION_STOP_REASON_REQUIRES_ACTION:
+                self.blocking_event_ids.update(event.stop_reason_event_ids())
+            self.tool_uses_since_status.clear()
+            return
+        if event.type in (EVENT_TYPE_SESSION_STATUS_RUNNING, EVENT_TYPE_SESSION_STATUS_RESCHEDULED):
+            self.blocking_events_known = True
+            self.blocking_event_ids.clear()
+            self.tool_uses_since_status.clear()
+
+    def should_handle_tool_use(self, call_id: str) -> bool:
+        if not self.blocking_events_known:
+            return True
+        return call_id in self.blocking_event_ids or call_id in self.tool_uses_since_status
+
+    def reconcile_recovered_results(self) -> None:
+        if not self.blocking_events_known:
+            return
+        for call_id in list(self.recovered_results):
+            if call_id in self.blocking_event_ids and call_id in self.session_tool_uses:
+                self.recovered_results.discard(call_id)
+                continue
+            if call_id in self.tool_uses_since_status:
+                continue
+            self.recovered_results.discard(call_id)
+            self.pending_results.pop(call_id, None)
+            self.runner.options.logger.warning("discard stale recovered tool result tool_use_id=%s", call_id)
+            if self.runner.options.result_store is not None:
+                discard = getattr(self.runner.options.result_store, "discard", None)
+                if not callable(discard):
+                    continue
+                try:
+                    discard(call_id)
+                except Exception as exc:  # noqa: BLE001 - optional custom store cleanup must not stop the runner.
+                    self.runner.options.logger.warning(
+                        "discard persisted tool result failed tool_use_id=%s err=%s", call_id, exc
+                    )
         self.maybe_arm_pending_idle()
 
     def arm_idle(self) -> None:

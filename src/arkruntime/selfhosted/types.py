@@ -26,6 +26,8 @@ EVENT_TYPE_USER_TOOL_CONFIRMATION = "user.tool_confirmation"
 EVENT_TYPE_USER_TOOL_RESULT = "user.tool_result"
 EVENT_TYPE_USER_CUSTOM_TOOL_RESULT = "user.custom_tool_result"
 EVENT_TYPE_SESSION_STATUS_IDLE = "session.status_idle"
+EVENT_TYPE_SESSION_STATUS_RUNNING = "session.status_running"
+EVENT_TYPE_SESSION_STATUS_RESCHEDULED = "session.status_rescheduled"
 EVENT_TYPE_SESSION_STATUS_TERMINATED = "session.status_terminated"
 EVENT_TYPE_SESSION_DELETED = "session.deleted"
 
@@ -310,6 +312,14 @@ class Event:
         if isinstance(self.stop_reason, str):
             return self.stop_reason
         return ""
+
+    def stop_reason_event_ids(self) -> List[str]:
+        if not isinstance(self.stop_reason, Mapping):
+            return []
+        event_ids = self.stop_reason.get("event_ids")
+        if not isinstance(event_ids, list):
+            return []
+        return [str(event_id) for event_id in event_ids if event_id]
 
     def to_dict(self) -> Dict[str, Any]:
         out = dict(self.extra)

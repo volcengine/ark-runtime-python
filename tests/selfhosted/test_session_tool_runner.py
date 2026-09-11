@@ -9,7 +9,26 @@ import time
 import pytest
 
 from arkruntime.selfhosted import Event, ListEventsResponse, SessionToolRunner, SessionToolRunnerOptions
+from arkruntime.selfhosted.tool_result_store import ToolCallStoreDecision
 from arkruntime.selfhosted.tools import FunctionTool, ToolContext, ToolSet, text_result
+
+
+class _RecordingStore:
+    def __init__(self) -> None:
+        self.discarded = []
+        self.marked = []
+
+    def begin(self, _call_id, _event):
+        return ToolCallStoreDecision()
+
+    def save_result(self, _call_id, _result) -> None:
+        pass
+
+    def mark_sent(self, call_id) -> None:
+        self.marked.append(call_id)
+
+    def discard(self, call_id) -> None:
+        self.discarded.append(call_id)
 
 
 class _ListAPI:
@@ -240,3 +259,114 @@ def test_successful_send_stays_answered_when_mark_sent_fails(tmp_path, caplog) -
     assert runner._state.answered["call-1"] is True
     assert "call-1" not in runner._state.pending_results
     assert "mark tool result sent failed" in caplog.text
+
+
+def test_recovered_results_are_filtered_against_current_blockers(tmp_path) -> None:
+    executions = []
+    store = _RecordingStore()
+    tool = FunctionTool("custom", lambda _input, _context: executions.append(True) or text_result("ok"))
+    runner = SessionToolRunner(
+        object(),
+        "session-1",
+        SessionToolRunnerOptions(
+            tools=ToolSet(),
+            tool_context=ToolContext(workdir=str(tmp_path)),
+            custom_tools={"custom": tool},
+            result_store=store,
+        ),
+    )
+    sent = []
+    runner._state.retry_send_event = lambda event, _call_id: sent.append(event) or True
+    runner._state.pending_results.update(
+        {
+            "foreign-call": Event(type="user.custom_tool_result", custom_tool_use_id="foreign-call"),
+            "stale-call": Event(type="user.custom_tool_result", custom_tool_use_id="stale-call"),
+        }
+    )
+    runner._state.recovered_results.update(("foreign-call", "stale-call"))
+
+    runner._state.process_listed_events(
+        [
+            Event(id="stale-call", type="agent.custom_tool_use", name="custom", input={}),
+            Event(id="current-call", type="agent.custom_tool_use", name="custom", input={}),
+            Event(
+                id="idle",
+                type="session.status_idle",
+                stop_reason={"type": "requires_action", "event_ids": ["current-call"]},
+            ),
+        ],
+        reconcile=True,
+    )
+
+    assert len(executions) == 1
+    assert len(sent) == 1
+    assert sent[0].custom_tool_use_id == "current-call"
+    assert set(store.discarded) == {"foreign-call", "stale-call"}
+    assert not runner._state.pending_results
+    assert not runner._state.recovered_results
+
+
+def test_current_blocker_reuses_recovered_result_without_reexecution(tmp_path) -> None:
+    executions = []
+    store = _RecordingStore()
+    tool = FunctionTool("custom", lambda _input, _context: executions.append(True) or text_result("ok"))
+    runner = SessionToolRunner(
+        object(),
+        "session-1",
+        SessionToolRunnerOptions(
+            tools=ToolSet(),
+            tool_context=ToolContext(workdir=str(tmp_path)),
+            custom_tools={"custom": tool},
+            result_store=store,
+        ),
+    )
+    sent = []
+    result = Event(type="user.custom_tool_result", custom_tool_use_id="current-call")
+    runner._state.pending_results["current-call"] = result
+    runner._state.recovered_results.add("current-call")
+    runner._state.retry_send_event = lambda event, _call_id: sent.append(event) or True
+
+    runner._state.process_listed_events(
+        [
+            Event(id="current-call", type="agent.custom_tool_use", name="custom", input={}),
+            Event(
+                id="idle",
+                type="session.status_idle",
+                stop_reason={"type": "requires_action", "event_ids": ["current-call"]},
+            ),
+        ],
+        reconcile=True,
+    )
+
+    assert not executions
+    assert sent == [result]
+    assert store.marked == ["current-call"]
+    assert not store.discarded
+
+
+def test_recovered_result_waits_for_authoritative_status(tmp_path) -> None:
+    executions = []
+    tool = FunctionTool("custom", lambda _input, _context: executions.append(True) or text_result("ok"))
+    runner = SessionToolRunner(
+        object(),
+        "session-1",
+        SessionToolRunnerOptions(
+            tools=ToolSet(),
+            tool_context=ToolContext(workdir=str(tmp_path)),
+            custom_tools={"custom": tool},
+        ),
+    )
+    sent = []
+    runner._state.pending_results["current-call"] = Event(
+        type="user.custom_tool_result", custom_tool_use_id="current-call"
+    )
+    runner._state.recovered_results.add("current-call")
+    runner._state.retry_send_event = lambda event, _call_id: sent.append(event) or True
+
+    runner._state.process_listed_events(
+        [Event(id="current-call", type="agent.custom_tool_use", name="custom", input={})], reconcile=True
+    )
+
+    assert not executions
+    assert not sent
+    assert runner._state.recovered_results == {"current-call"}

@@ -99,6 +99,16 @@ class FileToolResultStore:
         record["state"] = STATE_SENT
         self._write_record(record)
 
+    def discard(self, call_id: str) -> None:
+        """Remove a recovered result that is no longer blocked by this session."""
+        if not call_id:
+            raise ValueError("call id must not be empty")
+        try:
+            self._path(call_id).unlink()
+        except FileNotFoundError:
+            return
+        _sync_directory(self.dir)
+
     def _read(self, call_id: str) -> dict:
         return self._read_path(self._path(call_id))
 
