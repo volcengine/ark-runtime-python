@@ -6,28 +6,33 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Union
 
-from arkruntime._models import BaseModel
+from pydantic import Field
+from typing_extensions import Annotated, TypeAliasType
 
-from .content import Content
-from .messages_document_source_type import MessagesDocumentSourceType
+from .messages_content_part_document_source_base64 import (
+    MessagesContentPartDocumentSourceBase64,
+)
+from .messages_content_part_document_source_content import (
+    MessagesContentPartDocumentSourceContent,
+)
+from .messages_content_part_document_source_text import (
+    MessagesContentPartDocumentSourceText,
+)
+from .messages_content_part_document_source_url import (
+    MessagesContentPartDocumentSourceUrl,
+)
 
-
-class MessagesContentPartDocumentSource(BaseModel):
-    type: MessagesDocumentSourceType
-    """
-    How the document is supplied.
-    """
-    url: Optional[str] = None
-    """
-    A URL of the document when `type` is `url`.
-    """
-    data: Optional[str] = None
-    """
-    Document data for `base64` and `text` sources.
-    """
-    content: Optional[Content] = None
-    """
-    Inline document content when `type` is `content`.
-    """
+MessagesContentPartDocumentSource = TypeAliasType(
+    "MessagesContentPartDocumentSource",
+    Annotated[
+        Union[
+            MessagesContentPartDocumentSourceBase64,
+            MessagesContentPartDocumentSourceText,
+            MessagesContentPartDocumentSourceUrl,
+            MessagesContentPartDocumentSourceContent,
+        ],
+        Field(discriminator="type"),
+    ],
+)

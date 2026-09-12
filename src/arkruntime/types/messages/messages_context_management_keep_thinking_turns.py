@@ -6,11 +6,11 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, Optional
 
 from arkruntime._models import BaseModel
 
 
 class MessagesContextManagementKeepThinkingTurns(BaseModel):
     type: Literal["thinking_turns"]
-    value: int
+    value: Optional[int]

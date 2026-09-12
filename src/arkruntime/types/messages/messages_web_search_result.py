@@ -19,4 +19,7 @@ class MessagesWebSearchResult(BaseModel):
     title: str
     url: str
     encrypted_content: str
+    """
+    Opaque signed search content. Replay this value unchanged.
+    """
     page_age: Optional[str] = None

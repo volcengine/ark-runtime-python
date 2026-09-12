@@ -21,7 +21,7 @@ class ModelConfig(BaseModel):
 
     id: str
     """
-    模型 ID，例如 `claude-opus-4-7` / `claude-sonnet-4-6` / `claude-haiku-4-5`。
+    模型 ID，例如 `doubao-seed-2-1`。
     """
     speed: Optional[ModelSpeed] = None
     """

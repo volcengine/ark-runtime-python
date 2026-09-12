@@ -6,11 +6,20 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Optional
 
 from arkruntime._models import BaseModel
 
 
 class MessagesContextManagementClearToolUsesTrigger(BaseModel):
-    type: Literal["tool_uses"]
-    value: int
+    type: str
+    """
+    The trigger type. `tool_uses` and other values such as `input_tokens`
+    are accepted.
+    """
+    value: Optional[int] = None
+    """
+    For `tool_uses`, the server requires a value of at least 1. Other
+    trigger types accept an omitted value or any uint32 value, including 0.
+    This type-specific constraint is validated by the server.
+    """

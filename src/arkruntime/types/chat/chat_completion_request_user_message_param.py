@@ -17,8 +17,11 @@ class ChatCompletionRequestUserMessageParam(TypedDict, total=False):
     role: Required[Literal["user"]]
     """The role of the messages author. Always `user`."""
 
-    content: Required[ChatCompletionMessageContentParam]
-    """The contents of the user message."""
+    content: Optional[Optional[ChatCompletionMessageContentParam]]
+    """
+    The contents of the user message. Missing, null, or empty content is
+    normalized to an empty string.
+    """
 
     name: Optional[str]
     """

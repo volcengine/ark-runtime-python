@@ -27,7 +27,7 @@ class Session(BaseModel):
 
     id: str
     """
-    Session ID。
+    Session ID，形如 `sesn-...`。
     """
     type: Literal["session"]
     """

@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+from .description import Description
 from .file_create_request import FileCreateRequest
 from .file_deleted import FileDeleted
 from .file_error import FileError
@@ -19,6 +20,7 @@ from .tos_storage import TosStorage
 from .video import Video
 
 __all__ = [
+    "Description",
     "FileCreateRequest",
     "FileDeleted",
     "FileError",
@@ -31,6 +33,7 @@ __all__ = [
     "TosStorage",
     "Video",
 ]
+from .description_param import DescriptionParam
 from .file_create_request_param import FileCreateRequestParam
 from .preprocess_configs_param import PreprocessConfigsParam
 from .tos_storage_param import TosStorageParam

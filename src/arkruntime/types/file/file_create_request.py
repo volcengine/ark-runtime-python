@@ -10,6 +10,7 @@ from typing import Optional
 
 from arkruntime._models import BaseModel
 
+from .description import Description
 from .preprocess_configs import PreprocessConfigs
 from .purpose import Purpose
 from .tos_storage import TosStorage
@@ -20,14 +21,24 @@ class FileCreateRequest(BaseModel):
     """
     The intended purpose of the uploaded file.
     """
+    model: Optional[str] = None
+    """
+    Model identifier used to preprocess the file. This top-level field is
+    required and only takes effect when `purpose` is `voice`.
+    """
+    description: Optional[Description] = None
+    """
+    Human-readable file description, limited to 500 characters.
+    """
     preprocess_configs: Optional[PreprocessConfigs] = None
     """
     Preprocessing configuration to apply at upload time.
     """
     expire_at: Optional[int] = None
     """
-    Unix timestamp (seconds) after which the file should be purged.
-    Defaults to 7 days from upload when omitted.
+    Unix timestamp (seconds) after which the file should be purged. A value
+    of `-1` keeps the file permanently. Defaults to 7 days from upload when
+    omitted.
     """
     url: Optional[str] = None
     """

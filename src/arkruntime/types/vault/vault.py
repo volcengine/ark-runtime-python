@@ -18,7 +18,7 @@ class Vault(BaseModel):
 
     id: str
     """
-    Vault ID。
+    Vault ID，形如 `vlt-...`。
     """
     type: Literal["vault"]
     """

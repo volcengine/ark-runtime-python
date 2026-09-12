@@ -10,6 +10,7 @@ from typing import Optional
 
 from typing_extensions import Required, TypedDict
 
+from .description_param import DescriptionParam
 from .preprocess_configs_param import PreprocessConfigsParam
 from .purpose import Purpose
 from .tos_storage_param import TosStorageParam
@@ -19,13 +20,23 @@ class FileCreateRequestParam(TypedDict, total=False):
     purpose: Required[Purpose]
     """The intended purpose of the uploaded file."""
 
+    model: Optional[str]
+    """
+    Model identifier used to preprocess the file. This top-level field is
+    required and only takes effect when `purpose` is `voice`.
+    """
+
+    description: Optional[DescriptionParam]
+    """Human-readable file description, limited to 500 characters."""
+
     preprocess_configs: Optional[PreprocessConfigsParam]
     """Preprocessing configuration to apply at upload time."""
 
     expire_at: Optional[int]
     """
-    Unix timestamp (seconds) after which the file should be purged.
-    Defaults to 7 days from upload when omitted.
+    Unix timestamp (seconds) after which the file should be purged. A value
+    of `-1` keeps the file permanently. Defaults to 7 days from upload when
+    omitted.
     """
 
     url: Optional[str]

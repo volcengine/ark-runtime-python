@@ -8,17 +8,24 @@ from __future__ import annotations
 
 from typing import Dict, Literal
 
+from typing_extensions import Annotated
+
 from arkruntime._models import BaseModel
+from pydantic import Field
 
 
 class MessagesContentPartServerToolUse(BaseModel):
+    """
+    Replays a server-managed tool invocation in an assistant message.
+    """
+
     type: Literal["server_tool_use"]
     """
     The type of the content part. Always `server_tool_use`.
     """
-    id: str
+    id: Annotated[str, Field(min_length=1)]
     """
-    The public id of the server-managed tool invocation.
+    The non-empty public id of the server-managed tool invocation.
     """
     name: str
     """

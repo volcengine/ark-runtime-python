@@ -6,14 +6,38 @@
 
 from __future__ import annotations
 
-from .content import Content
 from .content_block_start import ContentBlockStart
 from .content_block_start_content_block import ContentBlockStartContentBlock
+from .content_block_start_content_block_server_tool_use import (
+    ContentBlockStartContentBlockServerToolUse,
+)
+from .content_block_start_content_block_text import ContentBlockStartContentBlockText
+from .content_block_start_content_block_thinking import (
+    ContentBlockStartContentBlockThinking,
+)
+from .content_block_start_content_block_tool_use import (
+    ContentBlockStartContentBlockToolUse,
+)
+from .content_block_start_content_block_web_search_tool_result import (
+    ContentBlockStartContentBlockWebSearchToolResult,
+)
 from .count_tokens_response import CountTokensResponse
 from .error import Error
 from .messages_content_part import MessagesContentPart
 from .messages_content_part_document import MessagesContentPartDocument
 from .messages_content_part_document_source import MessagesContentPartDocumentSource
+from .messages_content_part_document_source_base64 import (
+    MessagesContentPartDocumentSourceBase64,
+)
+from .messages_content_part_document_source_content import (
+    MessagesContentPartDocumentSourceContent,
+)
+from .messages_content_part_document_source_text import (
+    MessagesContentPartDocumentSourceText,
+)
+from .messages_content_part_document_source_url import (
+    MessagesContentPartDocumentSourceUrl,
+)
 from .messages_content_part_image import MessagesContentPartImage
 from .messages_content_part_image_source import MessagesContentPartImageSource
 from .messages_content_part_server_tool_use import MessagesContentPartServerToolUse
@@ -26,12 +50,6 @@ from .messages_content_part_web_search_tool_result import (
     MessagesContentPartWebSearchToolResult,
 )
 from .messages_context_management import MessagesContextManagement
-from .messages_context_management_clear_thinking import (
-    MessagesContextManagementClearThinking,
-)
-from .messages_context_management_clear_tool_uses import (
-    MessagesContextManagementClearToolUses,
-)
 from .messages_context_management_clear_tool_uses_trigger import (
     MessagesContextManagementClearToolUsesTrigger,
 )
@@ -47,15 +65,25 @@ from .messages_context_management_keep_thinking_turns import (
 from .messages_context_management_keep_tool_uses import (
     MessagesContextManagementKeepToolUses,
 )
-from .messages_document_source_type import MessagesDocumentSourceType
+from .messages_document_content import MessagesDocumentContent
+from .messages_document_content_parts import MessagesDocumentContentParts
+from .messages_document_content_text import MessagesDocumentContentText
 from .messages_error_response import MessagesErrorResponse
+from .messages_frequency_penalty import MessagesFrequencyPenalty
 from .messages_image_source_type import MessagesImageSourceType
 from .messages_iteration_usage import MessagesIterationUsage
+from .messages_logit_bias_value import MessagesLogitBiasValue
+from .messages_max_tokens import MessagesMaxTokens
+from .messages_max_uses import MessagesMaxUses
 from .messages_message_content import MessagesMessageContent
 from .messages_metadata import MessagesMetadata
 from .messages_output_config import MessagesOutputConfig
 from .messages_output_format import MessagesOutputFormat
-from .messages_output_format_type import MessagesOutputFormatType
+from .messages_output_format_json_object import MessagesOutputFormatJsonObject
+from .messages_output_format_json_schema import MessagesOutputFormatJsonSchema
+from .messages_output_format_text import MessagesOutputFormatText
+from .messages_presence_penalty import MessagesPresencePenalty
+from .messages_repetition_penalty import MessagesRepetitionPenalty
 from .messages_request import MessagesRequest
 from .messages_request_message import MessagesRequestMessage
 from .messages_request_service_tier import MessagesRequestServiceTier
@@ -104,6 +132,7 @@ from .messages_stream_event import MessagesStreamEvent
 from .messages_stream_options import MessagesStreamOptions
 from .messages_system import MessagesSystem
 from .messages_system_text_part import MessagesSystemTextPart
+from .messages_temperature import MessagesTemperature
 from .messages_thinking import MessagesThinking
 from .messages_tool import MessagesTool
 from .messages_tool_choice import MessagesToolChoice
@@ -114,6 +143,8 @@ from .messages_tool_choice_tool import MessagesToolChoiceTool
 from .messages_tool_result_content import MessagesToolResultContent
 from .messages_tool_result_content_part import MessagesToolResultContentPart
 from .messages_tool_user_location import MessagesToolUserLocation
+from .messages_top_logprobs import MessagesTopLogprobs
+from .messages_top_p import MessagesTopP
 from .messages_usage import MessagesUsage
 from .messages_web_search_result import MessagesWebSearchResult
 from .messages_web_search_tool_result_content import MessagesWebSearchToolResultContent
@@ -121,14 +152,22 @@ from .messages_web_search_tool_result_error import MessagesWebSearchToolResultEr
 from .model_fallback_status import ModelFallbackStatus
 
 __all__ = [
-    "Content",
     "ContentBlockStart",
     "ContentBlockStartContentBlock",
+    "ContentBlockStartContentBlockServerToolUse",
+    "ContentBlockStartContentBlockText",
+    "ContentBlockStartContentBlockThinking",
+    "ContentBlockStartContentBlockToolUse",
+    "ContentBlockStartContentBlockWebSearchToolResult",
     "CountTokensResponse",
     "Error",
     "MessagesContentPart",
     "MessagesContentPartDocument",
     "MessagesContentPartDocumentSource",
+    "MessagesContentPartDocumentSourceBase64",
+    "MessagesContentPartDocumentSourceContent",
+    "MessagesContentPartDocumentSourceText",
+    "MessagesContentPartDocumentSourceUrl",
     "MessagesContentPartImage",
     "MessagesContentPartImageSource",
     "MessagesContentPartServerToolUse",
@@ -139,8 +178,6 @@ __all__ = [
     "MessagesContentPartToolUse",
     "MessagesContentPartWebSearchToolResult",
     "MessagesContextManagement",
-    "MessagesContextManagementClearThinking",
-    "MessagesContextManagementClearToolUses",
     "MessagesContextManagementClearToolUsesTrigger",
     "MessagesContextManagementEdit",
     "MessagesContextManagementKeep",
@@ -148,15 +185,25 @@ __all__ = [
     "MessagesContextManagementKeepParameter",
     "MessagesContextManagementKeepThinkingTurns",
     "MessagesContextManagementKeepToolUses",
-    "MessagesDocumentSourceType",
+    "MessagesDocumentContent",
+    "MessagesDocumentContentParts",
+    "MessagesDocumentContentText",
     "MessagesErrorResponse",
+    "MessagesFrequencyPenalty",
     "MessagesImageSourceType",
     "MessagesIterationUsage",
+    "MessagesLogitBiasValue",
+    "MessagesMaxTokens",
+    "MessagesMaxUses",
     "MessagesMessageContent",
     "MessagesMetadata",
     "MessagesOutputConfig",
     "MessagesOutputFormat",
-    "MessagesOutputFormatType",
+    "MessagesOutputFormatJsonObject",
+    "MessagesOutputFormatJsonSchema",
+    "MessagesOutputFormatText",
+    "MessagesPresencePenalty",
+    "MessagesRepetitionPenalty",
     "MessagesRequest",
     "MessagesRequestMessage",
     "MessagesRequestServiceTier",
@@ -189,6 +236,7 @@ __all__ = [
     "MessagesStreamOptions",
     "MessagesSystem",
     "MessagesSystemTextPart",
+    "MessagesTemperature",
     "MessagesThinking",
     "MessagesTool",
     "MessagesToolChoice",
@@ -199,6 +247,8 @@ __all__ = [
     "MessagesToolResultContent",
     "MessagesToolResultContentPart",
     "MessagesToolUserLocation",
+    "MessagesTopLogprobs",
+    "MessagesTopP",
     "MessagesUsage",
     "MessagesWebSearchResult",
     "MessagesWebSearchToolResultContent",

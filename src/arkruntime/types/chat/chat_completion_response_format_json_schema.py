@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, Optional
+from typing import Optional
 
 from typing_extensions import Annotated
 
@@ -17,16 +17,15 @@ from pydantic import Field
 class ChatCompletionResponseFormatJsonSchema(BaseModel):
     name: str
     """
-    The name of the response format.
+    The non-empty name of the response format.
     """
     description: Optional[str] = None
     """
     A description of what the response format is for.
     """
-    schema_: Annotated[Optional[Dict[str, object]], Field(alias="schema")] = None
+    schema_: Annotated[Optional[object], Field(alias="schema")] = None
     """
-    The schema for the response format, described as a JSON Schema
-    object.
+    The JSON Schema value for the response format, preserved as raw JSON.
     """
     strict: Optional[bool] = None
     """

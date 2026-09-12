@@ -6,10 +6,11 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, Optional
 
 from arkruntime._models import BaseModel
 
 
 class MessagesContextManagementKeepAll(BaseModel):
     type: Literal["all"]
+    value: Optional[int] = None

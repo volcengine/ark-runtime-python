@@ -49,7 +49,7 @@ class MessagesResponse(BaseModel):
     """
     The reason the model stopped generating tokens.
     """
-    stop_sequence: Optional[str] = None
+    stop_sequence: Optional[str]
     """
     The custom stop sequence that was generated, if any.
     """

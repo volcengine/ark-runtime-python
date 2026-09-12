@@ -6,25 +6,34 @@
 
 from __future__ import annotations
 
-from typing import Union
+from typing import List, Optional
 
+from typing_extensions import Annotated
+
+from arkruntime._models import BaseModel
 from pydantic import Field
-from typing_extensions import Annotated, TypeAliasType
 
-from .messages_context_management_clear_thinking import (
-    MessagesContextManagementClearThinking,
+from .messages_context_management_clear_tool_uses_trigger import (
+    MessagesContextManagementClearToolUsesTrigger,
 )
-from .messages_context_management_clear_tool_uses import (
-    MessagesContextManagementClearToolUses,
-)
+from .messages_context_management_keep import MessagesContextManagementKeep
 
-MessagesContextManagementEdit = TypeAliasType(
-    "MessagesContextManagementEdit",
-    Annotated[
-        Union[
-            MessagesContextManagementClearThinking,
-            MessagesContextManagementClearToolUses,
-        ],
-        Field(discriminator="type"),
-    ],
-)
+
+class MessagesContextManagementEdit(BaseModel):
+    type: Annotated[str, Field(pattern="^(clear_thinking|clear_tool_uses)")]
+    """
+    Supports `clear_thinking`, `clear_tool_uses`, and version-suffixed forms.
+    """
+    keep: Optional[MessagesContextManagementKeep] = None
+    exclude_tools: Optional[List[str]] = None
+    """
+    Applies to clear_tool_uses edits.
+    """
+    clear_tool_inputs: Optional[bool] = None
+    """
+    Applies to clear_tool_uses edits.
+    """
+    trigger: Optional[MessagesContextManagementClearToolUsesTrigger] = None
+    """
+    Applies to clear_tool_uses edits.
+    """

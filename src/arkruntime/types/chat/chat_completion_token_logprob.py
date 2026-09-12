@@ -23,4 +23,7 @@ class ChatCompletionTokenLogprob(BaseModel):
     A list of integers representing the UTF-8 bytes representation of
     the token. May be `null` if there is no bytes representation.
     """
-    top_logprobs: List[ChatCompletionTokenLogprobTopLogprob]
+    top_logprobs: Optional[List[ChatCompletionTokenLogprobTopLogprob]]
+    """
+    The most likely tokens at this position, or `null` when none are returned.
+    """

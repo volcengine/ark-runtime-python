@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, Literal
+from typing import Dict, Literal, Optional
 
 from arkruntime._models import BaseModel
 
@@ -16,9 +16,9 @@ class MessagesContentPartToolUse(BaseModel):
     """
     The type of the content part. Always `tool_use`.
     """
-    id: str
+    id: Optional[str] = None
     """
-    The id of the tool invocation.
+    The tool invocation id. Missing, null, and empty ids are accepted for compatibility.
     """
     name: str
     """

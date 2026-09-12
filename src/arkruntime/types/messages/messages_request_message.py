@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+from typing import Optional
+
 from arkruntime._models import BaseModel
 
 from .messages_message_content import MessagesMessageContent
@@ -15,9 +17,13 @@ from .messages_role import MessagesRole
 class MessagesRequestMessage(BaseModel):
     role: MessagesRole
     """
-    The role of the message author.
+    object non-empty role. Roles other than `user` and `assistant` are
+    interpreted as system messages.
     """
-    content: MessagesMessageContent
+    content: Optional[MessagesMessageContent] = None
     """
-    The contents of the message.
+    The message content. For user and assistant messages, missing, null,
+    and empty-array content is normalized to an empty string. For all other
+    roles, the server requires this field to be present (null is accepted).
+    This conditional requirement is validated by the server.
     """

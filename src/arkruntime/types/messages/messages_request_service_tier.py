@@ -10,5 +10,7 @@ from enum import Enum
 
 
 class MessagesRequestServiceTier(str, Enum):
+    field_ = ""
     auto = "auto"
     default = "default"
+    flex = "flex"

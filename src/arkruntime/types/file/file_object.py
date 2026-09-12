@@ -10,6 +10,7 @@ from typing import Literal, Optional
 
 from arkruntime._models import BaseModel
 
+from .description import Description
 from .file_error import FileError
 from .preprocess_configs import PreprocessConfigs
 from .purpose import Purpose
@@ -33,6 +34,14 @@ class FileObject(BaseModel):
     """
     The intended purpose of the uploaded file.
     """
+    model: Optional[str] = None
+    """
+    Model identifier used to preprocess the file, when one was provided.
+    """
+    description: Optional[Description] = None
+    """
+    User-provided description for the file, when one was provided.
+    """
     filename: str
     """
     Original filename of the uploaded file.
@@ -51,7 +60,7 @@ class FileObject(BaseModel):
     """
     expire_at: int
     """
-    Unix timestamp (seconds) after which the file is purged.
+    Unix timestamp (seconds) after which the file is purged; `-1` means permanent.
     """
     status: Status
     """

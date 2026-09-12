@@ -6,23 +6,20 @@
 
 from __future__ import annotations
 
-from typing import Dict, Optional
+from typing import Optional
 
 from typing_extensions import Required, TypedDict
 
 
 class ChatCompletionResponseFormatJsonSchemaParam(TypedDict, total=False):
     name: Required[str]
-    """The name of the response format."""
+    """The non-empty name of the response format."""
 
     description: Optional[str]
     """A description of what the response format is for."""
 
-    schema: Optional[Dict[str, object]]
-    """
-    The schema for the response format, described as a JSON Schema
-    object.
-    """
+    schema: Optional[object]
+    """The JSON Schema value for the response format, preserved as raw JSON."""
 
     strict: Optional[bool]
     """

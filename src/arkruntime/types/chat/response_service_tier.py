@@ -13,3 +13,4 @@ class ResponseServiceTier(str, Enum):
     default = "default"
     scale = "scale"
     fast = "fast"
+    flex = "flex"

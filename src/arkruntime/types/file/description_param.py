@@ -6,10 +6,10 @@
 
 from __future__ import annotations
 
-from arkruntime._models import BaseModel
+from typing_extensions import TypeAlias
 
 
-class Content(BaseModel):
-    """
-    Inline document content when `type` is `content`.
-    """
+DescriptionParam: TypeAlias = str
+"""
+A user-provided file description, limited to 500 characters.
+"""

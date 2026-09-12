@@ -6,11 +6,11 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from typing import Literal, Optional
+
+from arkruntime._models import BaseModel
 
 
-class MessagesDocumentSourceType(str, Enum):
-    base64 = "base64"
-    text = "text"
-    url = "url"
-    content = "content"
+class ContentBlockStartContentBlockThinking(BaseModel):
+    type: Literal["thinking"]
+    thinking: Optional[str] = None

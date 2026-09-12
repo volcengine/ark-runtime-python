@@ -21,7 +21,7 @@ class Environment(BaseModel):
 
     id: str
     """
-    Environment ID。
+    Environment ID，形如 `env-...`。
     """
     type: Literal["environment"]
     """

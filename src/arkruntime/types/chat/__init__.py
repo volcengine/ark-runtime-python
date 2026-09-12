@@ -37,7 +37,16 @@ from .chat_completion_request import ChatCompletionRequest
 from .chat_completion_request_assistant_message import (
     ChatCompletionRequestAssistantMessage,
 )
+from .chat_completion_request_developer_message import (
+    ChatCompletionRequestDeveloperMessage,
+)
 from .chat_completion_request_message import ChatCompletionRequestMessage
+from .chat_completion_request_message_tool_call import (
+    ChatCompletionRequestMessageToolCall,
+)
+from .chat_completion_request_message_tool_call_function import (
+    ChatCompletionRequestMessageToolCallFunction,
+)
 from .chat_completion_request_system_message import ChatCompletionRequestSystemMessage
 from .chat_completion_request_tool_message import ChatCompletionRequestToolMessage
 from .chat_completion_request_user_message import ChatCompletionRequestUserMessage
@@ -104,7 +113,10 @@ __all__ = [
     "ChatCompletionNamedToolChoice",
     "ChatCompletionRequest",
     "ChatCompletionRequestAssistantMessage",
+    "ChatCompletionRequestDeveloperMessage",
     "ChatCompletionRequestMessage",
+    "ChatCompletionRequestMessageToolCall",
+    "ChatCompletionRequestMessageToolCallFunction",
     "ChatCompletionRequestSystemMessage",
     "ChatCompletionRequestToolMessage",
     "ChatCompletionRequestUserMessage",
@@ -172,15 +184,20 @@ from .chat_completion_content_part_video_video_url_param import (
     ChatCompletionContentPartVideoVideoUrlParam,
 )
 from .chat_completion_message_content_param import ChatCompletionMessageContentParam
-from .chat_completion_message_tool_call_function_param import (
-    ChatCompletionMessageToolCallFunctionParam,
-)
-from .chat_completion_message_tool_call_param import ChatCompletionMessageToolCallParam
 from .chat_completion_named_tool_choice_param import ChatCompletionNamedToolChoiceParam
 from .chat_completion_request_assistant_message_param import (
     ChatCompletionRequestAssistantMessageParam,
 )
+from .chat_completion_request_developer_message_param import (
+    ChatCompletionRequestDeveloperMessageParam,
+)
 from .chat_completion_request_message_param import ChatCompletionRequestMessageParam
+from .chat_completion_request_message_tool_call_function_param import (
+    ChatCompletionRequestMessageToolCallFunctionParam,
+)
+from .chat_completion_request_message_tool_call_param import (
+    ChatCompletionRequestMessageToolCallParam,
+)
 from .chat_completion_request_param import ChatCompletionRequestParam
 from .chat_completion_request_system_message_param import (
     ChatCompletionRequestSystemMessageParam,

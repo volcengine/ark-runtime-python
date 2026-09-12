@@ -26,9 +26,7 @@ class ManagedAgentsUserDefineOutcomeEventParams(BaseModel):
     outcome_id: Optional[str] = None
     """
     outcome id（客户端自定义 unique key）；缺省时由服务端在事件入库前 stamp
-    一个 `outc-<ts>-<rand>` 形态的 id 出来（见 ark-agent-event
-    eventservice.go::ensureUserEventID 的 envelope-level mint 逻辑），
-    因此 wire 上此字段是 optional，不是 required。
+    一个 `outc-...` 形态的 id，因此 wire 上此字段是 optional，不是 required。
     """
     rubric: ManagedAgentsRubric
     """

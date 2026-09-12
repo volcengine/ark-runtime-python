@@ -23,7 +23,7 @@ from .thinking_param import ThinkingParam
 
 class ChatCompletionRequestParam(TypedDict, total=False):
     messages: Required[List[ChatCompletionRequestMessageParam]]
-    """A list of messages comprising the conversation so far."""
+    """A non-empty list of messages comprising the conversation so far."""
 
     model: Required[str]
     """ID of the model to use."""
@@ -58,17 +58,17 @@ class ChatCompletionRequestParam(TypedDict, total=False):
     top_logprobs: Optional[int]
     """
     Number of most-likely tokens to return at each position when
-    `logprobs` is true. Range 0-20.
+    `logprobs` is true. The allowed range is model-dependent (default 0-20).
     """
 
     max_tokens: Optional[int]
     """
-    The maximum number of tokens that can be generated in the
-    completion.
+    The non-negative maximum number of tokens that can be generated in
+    the completion.
     """
 
     max_completion_tokens: Optional[int]
-    """Upper bound on completion tokens, including reasoning tokens."""
+    """Non-negative upper bound on completion tokens, including reasoning tokens."""
 
     n: Optional[int]
     """
@@ -81,8 +81,8 @@ class ChatCompletionRequestParam(TypedDict, total=False):
 
     stop: Optional[ChatCompletionStopParam]
     """
-    Up to 4 sequences where the API will stop generating further
-    tokens.
+    Sequences where the API will stop generating further tokens. The
+    count limit is model-dependent (default 4). Null means no stop sequences.
     """
 
     stream: Optional[bool]

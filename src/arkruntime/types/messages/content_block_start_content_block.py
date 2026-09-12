@@ -11,25 +11,29 @@ from typing import Union
 from pydantic import Field
 from typing_extensions import Annotated, TypeAliasType
 
-from .messages_response_content_part_server_tool_use import (
-    MessagesResponseContentPartServerToolUse,
+from .content_block_start_content_block_server_tool_use import (
+    ContentBlockStartContentBlockServerToolUse,
 )
-from .messages_response_content_part_text import MessagesResponseContentPartText
-from .messages_response_content_part_thinking import MessagesResponseContentPartThinking
-from .messages_response_content_part_tool_use import MessagesResponseContentPartToolUse
-from .messages_response_content_part_web_search_tool_result import (
-    MessagesResponseContentPartWebSearchToolResult,
+from .content_block_start_content_block_text import ContentBlockStartContentBlockText
+from .content_block_start_content_block_thinking import (
+    ContentBlockStartContentBlockThinking,
+)
+from .content_block_start_content_block_tool_use import (
+    ContentBlockStartContentBlockToolUse,
+)
+from .content_block_start_content_block_web_search_tool_result import (
+    ContentBlockStartContentBlockWebSearchToolResult,
 )
 
 ContentBlockStartContentBlock = TypeAliasType(
     "ContentBlockStartContentBlock",
     Annotated[
         Union[
-            MessagesResponseContentPartText,
-            MessagesResponseContentPartThinking,
-            MessagesResponseContentPartToolUse,
-            MessagesResponseContentPartServerToolUse,
-            MessagesResponseContentPartWebSearchToolResult,
+            ContentBlockStartContentBlockText,
+            ContentBlockStartContentBlockThinking,
+            ContentBlockStartContentBlockToolUse,
+            ContentBlockStartContentBlockServerToolUse,
+            ContentBlockStartContentBlockWebSearchToolResult,
         ],
         Field(discriminator="type"),
     ],

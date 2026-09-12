@@ -20,7 +20,7 @@ class Memory(BaseModel):
 
     id: str
     """
-    Memory ID。
+    Memory ID，形如 `mem-...`。
     """
     type: Literal["memory"]
     """

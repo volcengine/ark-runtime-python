@@ -24,7 +24,7 @@ from .thinking import Thinking
 class ChatCompletionRequest(BaseModel):
     messages: List[ChatCompletionRequestMessage]
     """
-    A list of messages comprising the conversation so far.
+    A non-empty list of messages comprising the conversation so far.
     """
     model: str
     """
@@ -57,16 +57,16 @@ class ChatCompletionRequest(BaseModel):
     top_logprobs: Optional[int] = None
     """
     Number of most-likely tokens to return at each position when
-    `logprobs` is true. Range 0-20.
+    `logprobs` is true. The allowed range is model-dependent (default 0-20).
     """
     max_tokens: Optional[int] = None
     """
-    The maximum number of tokens that can be generated in the
-    completion.
+    The non-negative maximum number of tokens that can be generated in
+    the completion.
     """
     max_completion_tokens: Optional[int] = None
     """
-    Upper bound on completion tokens, including reasoning tokens.
+    Non-negative upper bound on completion tokens, including reasoning tokens.
     """
     n: Optional[int] = None
     """
@@ -79,8 +79,8 @@ class ChatCompletionRequest(BaseModel):
     """
     stop: Optional[ChatCompletionStop] = None
     """
-    Up to 4 sequences where the API will stop generating further
-    tokens.
+    Sequences where the API will stop generating further tokens. The
+    count limit is model-dependent (default 4). Null means no stop sequences.
     """
     stream: Optional[bool] = None
     """

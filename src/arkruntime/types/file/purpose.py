@@ -16,3 +16,4 @@ class Purpose(str, Enum):
 
     user_data = "user_data"
     agent = "agent"
+    voice = "voice"

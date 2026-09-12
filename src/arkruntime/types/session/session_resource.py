@@ -26,7 +26,7 @@ class SessionResource(BaseModel):
 
     id: Optional[str] = None
     """
-    SessionResource ID。
+    SessionResource ID，形如 `sesrsc-...`。
     """
     type: SessionResourceType
     """

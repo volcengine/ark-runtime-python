@@ -127,6 +127,7 @@ from arkruntime import AsyncArk
 
 client = AsyncArk.volc()
 
+
 async def main():
     response = await client.responses.create(
         model=os.environ.get("ARK_MODEL", "doubao-seed-2-1-pro-260628"),
@@ -137,6 +138,7 @@ async def main():
             for content in item.content:
                 if content.type == "output_text":
                     print(content.text)
+
 
 asyncio.run(main())
 ```

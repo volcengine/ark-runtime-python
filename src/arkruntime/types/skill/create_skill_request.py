@@ -6,9 +6,12 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import List, Optional
+
+from typing_extensions import Annotated
 
 from arkruntime._models import BaseModel
+from pydantic import Field
 
 
 class CreateSkillRequest(BaseModel):
@@ -19,4 +22,17 @@ class CreateSkillRequest(BaseModel):
     protection_enabled: Optional[bool] = None
     """
     是否启用 Skill 内容保护。
+    """
+    files: Optional[List[object]] = None
+    """
+    技能包内容。可以是单个 `.zip`，也可以是一组带相对路径的松散文件；
+    该字段名允许在同一次请求中重复出现以传多个文件。
+
+    与 `files[]` 语义等价，两者至少提供其一；同时提供时会被服务端合并。
+    """
+    files__: Annotated[Optional[List[object]], Field(alias="files[]")] = None
+    """
+    `files` 的可重复字段名别名，语义完全等价；便于用
+    `-F 'files[]=@a' -F 'files[]=@b'` 这种 jQuery/PHP 风格的
+    multipart 客户端直接使用。
     """

@@ -6,10 +6,10 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from pydantic import Field
+from typing_extensions import Annotated, TypeAliasType
 
-
-class MessagesOutputFormatType(str, Enum):
-    text = "text"
-    json_object = "json_object"
-    json_schema = "json_schema"
+Description = TypeAliasType("Description", Annotated[str, Field(max_length=500)])
+"""
+A user-provided file description, limited to 500 characters.
+"""

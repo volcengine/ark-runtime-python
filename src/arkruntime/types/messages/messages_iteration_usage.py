@@ -12,11 +12,11 @@ from arkruntime._models import BaseModel
 class MessagesIterationUsage(BaseModel):
     type: str
     """
-    The iteration usage record type.
+    The iteration usage record type, currently `message`.
     """
     input_tokens: int
     """
-    Number of input tokens consumed by this model iteration.
+    Number of input tokens consumed by this iteration, excluding cache reads.
     """
     output_tokens: int
     """
