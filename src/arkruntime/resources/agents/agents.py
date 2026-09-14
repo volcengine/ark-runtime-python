@@ -83,13 +83,29 @@ class Agents(SyncAPIResource):
             cast_to=Agent,
         )
 
-    def retrieve(self, agent_id: str, *, extra_headers=None, extra_query=None, extra_body=None, timeout=None) -> Agent:
+    def retrieve(
+        self,
+        agent_id: str,
+        *,
+        version: Optional[int] | NotGiven = NOT_GIVEN,
+        extra_headers=None,
+        extra_query=None,
+        extra_body=None,
+        timeout=None,
+    ) -> Agent:
         if not agent_id:
             raise ValueError("agent_id is required")
+        query: dict = {}
+        if version is not NOT_GIVEN and version is not None:
+            query["version"] = version
         return self._get(
             f"{_PREFIX}/{agent_id}",
             options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+                query=query or None,
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
             ),
             cast_to=Agent,
         )
@@ -248,14 +264,28 @@ class AsyncAgents(AsyncAPIResource):
         )
 
     async def retrieve(
-        self, agent_id: str, *, extra_headers=None, extra_query=None, extra_body=None, timeout=None
+        self,
+        agent_id: str,
+        *,
+        version: Optional[int] | NotGiven = NOT_GIVEN,
+        extra_headers=None,
+        extra_query=None,
+        extra_body=None,
+        timeout=None,
     ) -> Agent:
         if not agent_id:
             raise ValueError("agent_id is required")
+        query: dict = {}
+        if version is not NOT_GIVEN and version is not None:
+            query["version"] = version
         return await self._get(
             f"{_PREFIX}/{agent_id}",
             options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+                query=query or None,
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
             ),
             cast_to=Agent,
         )

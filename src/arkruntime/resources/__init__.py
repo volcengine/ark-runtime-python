@@ -5,6 +5,7 @@
 from .agents import Agents, AsyncAgents
 from .batch import AsyncBatch, Batch
 from .chat import AsyncChat, Chat
+from .checkpoints import AsyncCheckpoints, Checkpoints
 from .content_generation import AsyncContentGeneration, ContentGeneration
 from .embeddings import AsyncEmbeddings, Embeddings
 from .environments import AsyncEnvironments, AsyncEnvironmentWork, Environments, EnvironmentWork
@@ -31,7 +32,9 @@ from .tokenization import AsyncTokenization, Tokenization
 from .vaults import AsyncCredentials, AsyncVaults, Credentials, Vaults
 
 __all__ = [
+    "Checkpoints",
     "Chat",
+    "AsyncCheckpoints",
     "AsyncChat",
     "Embeddings",
     "AsyncEmbeddings",

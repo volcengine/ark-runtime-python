@@ -135,6 +135,7 @@ class Ark(SyncAPIClient):
         self.environments = resources.Environments(self)
         self.memory_stores = resources.MemoryStores(self)
         self.sessions = resources.Sessions(self)
+        self.checkpoints = resources.Checkpoints(self)
         self.skills = resources.Skills(self)
         self.vaults = resources.Vaults(self)
 
@@ -289,6 +290,7 @@ class AsyncArk(AsyncAPIClient):
         self.environments = resources.AsyncEnvironments(self)
         self.memory_stores = resources.AsyncMemoryStores(self)
         self.sessions = resources.AsyncSessions(self)
+        self.checkpoints = resources.AsyncCheckpoints(self)
         self.skills = resources.AsyncSkills(self)
         self.vaults = resources.AsyncVaults(self)
 

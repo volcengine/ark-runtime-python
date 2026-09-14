@@ -8,6 +8,7 @@ from ..._managed_agents_serialize import dump_body
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._types import NOT_GIVEN, NotGiven
 from ...types.session.agent_identifier import AgentIdentifier
+from ...types.session.checkpoint_restore_config import CheckpointRestoreConfig
 from ...types.session.delete_session_response import DeleteSessionResponse
 from ...types.session.list_sessions_order import ListSessionsOrder
 from ...types.session.list_sessions_response import ListSessionsResponse
@@ -73,17 +74,26 @@ class Sessions(SyncAPIResource):
     def create(
         self,
         *,
-        agent: AgentIdentifier,
-        environment_id: str,
+        agent: Optional[AgentIdentifier] | NotGiven = NOT_GIVEN,
+        environment_id: Optional[str] | NotGiven = NOT_GIVEN,
         tags: Optional[List[Tag]] | NotGiven = NOT_GIVEN,
         resources: Optional[List[SessionResource]] | NotGiven = NOT_GIVEN,
         title: Optional[str] | NotGiven = NOT_GIVEN,
         vault_ids: Optional[List[str]] | NotGiven = NOT_GIVEN,
+        checkpoint_id: Optional[str] | NotGiven = NOT_GIVEN,
+        checkpoint_restore_config: Optional[CheckpointRestoreConfig] | NotGiven = NOT_GIVEN,
         extra_headers=None,
         extra_query=None,
         extra_body=None,
         timeout=None,
     ) -> Session:
+        """Create a Session, or restore one from a checkpoint.
+
+        When ``checkpoint_id`` is given, ``agent`` / ``environment_id`` may
+        be omitted and are inherited from the checkpoint snapshot.
+        ``resources`` must be omitted when restoring; ``vault_ids`` must be
+        omitted for same-account restore.
+        """
         return self._post(
             _PREFIX,
             body=dump_body(
@@ -94,6 +104,8 @@ class Sessions(SyncAPIResource):
                     "resources": resources,
                     "title": title,
                     "vault_ids": vault_ids,
+                    "checkpoint_id": checkpoint_id,
+                    "checkpoint_restore_config": checkpoint_restore_config,
                 }
             ),
             options=make_request_options(
@@ -210,12 +222,14 @@ class AsyncSessions(AsyncAPIResource):
     async def create(
         self,
         *,
-        agent: AgentIdentifier,
-        environment_id: str,
+        agent: Optional[AgentIdentifier] | NotGiven = NOT_GIVEN,
+        environment_id: Optional[str] | NotGiven = NOT_GIVEN,
         tags=NOT_GIVEN,
         resources=NOT_GIVEN,
         title=NOT_GIVEN,
         vault_ids=NOT_GIVEN,
+        checkpoint_id=NOT_GIVEN,
+        checkpoint_restore_config=NOT_GIVEN,
         extra_headers=None,
         extra_query=None,
         extra_body=None,
@@ -231,6 +245,8 @@ class AsyncSessions(AsyncAPIResource):
                     "resources": resources,
                     "title": title,
                     "vault_ids": vault_ids,
+                    "checkpoint_id": checkpoint_id,
+                    "checkpoint_restore_config": checkpoint_restore_config,
                 }
             ),
             options=make_request_options(
