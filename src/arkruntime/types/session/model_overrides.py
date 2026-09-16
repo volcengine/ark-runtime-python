@@ -6,14 +6,16 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Dict, List, Optional
 
 from arkruntime._models import BaseModel
+
+from .override_token_limits import OverrideTokenLimits
 
 
 class ModelOverrides(BaseModel):
     """
-    Session 创建时允许临时覆写的模型运行参数。
+    Session 创建时允许临时覆写的模型运行参数与接入配置。
 
     内部字段省略表示继承 base Agent 的对应值。
     """
@@ -39,4 +41,39 @@ class ModelOverrides(BaseModel):
     service_tier: Optional[str] = None
     """
     服务档位。
+    """
+    provider: Optional[str] = None
+    """
+    模型提供方覆写，例如 `"ark"` 或外接 provider 名。非空才生效，显式传空
+    串返回 400。切到非 ark provider 时，`base_url` 与 `token_limits` 为
+    必填（可继承快照中已有的值，否则返回 400）；ark provider 不允许指定
+    `token_limits`。
+    """
+    protocol: Optional[str] = None
+    """
+    模型接入协议覆写；取值须命中服务端维护的接入协议白名单，非法值返回
+    400。
+    """
+    base_url: Optional[str] = None
+    """
+    自定义模型接入点 base URL。配合非 ark 的 `provider` 使用，把 Session
+    快照里冻结的上游替换成当前环境可达的接入点。
+    """
+    headers: Optional[Dict[str, str]] = None
+    """
+    自定义模型请求 header（整组覆写），例如 `Authorization` 或
+    `X-Trial-Id`；key / value 均为字符串。
+    """
+    token_limits: Optional[OverrideTokenLimits] = None
+    """
+    模型 token 限制覆写（整体替换，提供时内部三字段必填且为正数）；
+    非 ark provider 可用，ark provider 指定返回 400。
+    """
+    input_modalities: Optional[List[str]] = None
+    """
+    底模支持的输入模态列表覆写。取值域：`text` / `image` / `audio` /
+    `video`（无 `document`；文档在内部归入 image 通道）。
+
+    服务端会做归一化：去空白、转小写、元素去重、拒绝空元素，元素长度
+    上限 32，列表长度上限 16，超出返回 400。
     """
