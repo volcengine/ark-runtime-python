@@ -8,8 +8,12 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional
 
-from arkruntime._models import BaseModel
+from typing_extensions import Annotated
 
+from arkruntime._models import BaseModel
+from pydantic import Field
+
+from .messages_max_uses import MessagesMaxUses
 from .messages_tool_user_location import MessagesToolUserLocation
 
 
@@ -18,7 +22,7 @@ class MessagesTool(BaseModel):
     """
     A description of what the tool does and when the model should use it.
     """
-    name: str
+    name: Annotated[str, Field(min_length=1)]
     """
     The tool name.
     """
@@ -32,19 +36,20 @@ class MessagesTool(BaseModel):
     """
     type: Optional[str] = None
     """
-    A server-managed tool version, such as `web_search_20250305`.
+    A tool type. A non-empty type without a description denotes a server-managed
+    tool; web search uses the name `web_search` and a `web_search_` type prefix.
     """
-    max_uses: Optional[int] = None
+    max_uses: Optional[MessagesMaxUses] = None
     """
     Maximum number of times a server-managed tool may be dispatched.
     """
     allowed_domains: Optional[List[str]] = None
     """
-    Domains that a server-managed web tool is allowed to access.
+    Allowed domains. Cannot be non-empty together with `blocked_domains`.
     """
     blocked_domains: Optional[List[str]] = None
     """
-    Domains that a server-managed web tool must not access.
+    Blocked domains. Cannot be non-empty together with `allowed_domains`.
     """
     user_location: Optional[MessagesToolUserLocation] = None
     """

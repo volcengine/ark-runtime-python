@@ -12,6 +12,10 @@ from arkruntime._models import BaseModel
 
 
 class MessagesToolUserLocation(BaseModel):
+    """
+    Accepted for web-search compatibility; not currently forwarded to the search provider.
+    """
+
     type: Optional[str] = None
     city: Optional[str] = None
     region: Optional[str] = None

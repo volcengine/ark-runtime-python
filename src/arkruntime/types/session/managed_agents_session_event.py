@@ -26,7 +26,7 @@ class ManagedAgentsSessionEvent(BaseModel):
     """
     id: Optional[str] = None
     """
-    事件 id（服务端在 ingest 阶段 stamp，形如 `sevt-<ts>-<rand>`）。
+    事件 id（服务端在 ingest 阶段 stamp，形如 `sevt-...`）。
     """
     processed_at: Optional[str] = None
     """

@@ -21,7 +21,4 @@ class ChatCompletionResponseFormatParam(TypedDict, total=False):
     """The type of the response format."""
 
     json_schema: Optional[ChatCompletionResponseFormatJsonSchemaParam]
-    """
-    Structured Outputs configuration; required when `type` is
-    `json_schema`.
-    """
+    """Structured Outputs configuration for `json_schema` responses."""

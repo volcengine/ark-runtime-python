@@ -14,6 +14,6 @@ class SkillRefType(str, Enum):
     Skill 引用类型。
     """
 
-    anthropic = "anthropic"
     custom = "custom"
     skill_hub = "skill_hub"
+    ark = "ark"

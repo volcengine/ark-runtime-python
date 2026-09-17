@@ -24,7 +24,7 @@ class AgentSkillRef(BaseModel):
     """
     skill_id: Optional[str] = None
     """
-    Skill ID，形如 `skill_01XJ5...`。
+    Skill ID，形如 `skill-...`。
     """
     version: Optional[str] = None
     """

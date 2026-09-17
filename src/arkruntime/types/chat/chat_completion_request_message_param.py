@@ -13,6 +13,9 @@ from typing_extensions import TypeAlias
 from .chat_completion_request_assistant_message_param import (
     ChatCompletionRequestAssistantMessageParam,
 )
+from .chat_completion_request_developer_message_param import (
+    ChatCompletionRequestDeveloperMessageParam,
+)
 from .chat_completion_request_system_message_param import (
     ChatCompletionRequestSystemMessageParam,
 )
@@ -26,6 +29,7 @@ from .chat_completion_request_user_message_param import (
 ChatCompletionRequestMessageParam: TypeAlias = Union[
     ChatCompletionRequestUserMessageParam,
     ChatCompletionRequestSystemMessageParam,
+    ChatCompletionRequestDeveloperMessageParam,
     ChatCompletionRequestAssistantMessageParam,
     ChatCompletionRequestToolMessageParam,
 ]

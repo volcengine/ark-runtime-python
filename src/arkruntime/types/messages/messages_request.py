@@ -8,20 +8,31 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional
 
+from typing_extensions import Annotated
+
 from arkruntime._models import BaseModel
+from pydantic import Field
 
 from .messages_context_management import MessagesContextManagement
+from .messages_frequency_penalty import MessagesFrequencyPenalty
+from .messages_logit_bias_value import MessagesLogitBiasValue
+from .messages_max_tokens import MessagesMaxTokens
 from .messages_metadata import MessagesMetadata
 from .messages_output_config import MessagesOutputConfig
 from .messages_output_format import MessagesOutputFormat
+from .messages_presence_penalty import MessagesPresencePenalty
+from .messages_repetition_penalty import MessagesRepetitionPenalty
 from .messages_request_message import MessagesRequestMessage
 from .messages_request_service_tier import MessagesRequestServiceTier
 from .messages_stop_sequences import MessagesStopSequences
 from .messages_stream_options import MessagesStreamOptions
 from .messages_system import MessagesSystem
+from .messages_temperature import MessagesTemperature
 from .messages_thinking import MessagesThinking
 from .messages_tool import MessagesTool
 from .messages_tool_choice import MessagesToolChoice
+from .messages_top_logprobs import MessagesTopLogprobs
+from .messages_top_p import MessagesTopP
 
 
 class MessagesRequest(BaseModel):
@@ -29,7 +40,7 @@ class MessagesRequest(BaseModel):
     Creates a model response for the supplied conversation.
     """
 
-    messages: List[MessagesRequestMessage]
+    messages: Annotated[List[MessagesRequestMessage], Field(min_length=1)]
     """
     A list of messages comprising the conversation so far.
     """
@@ -41,30 +52,30 @@ class MessagesRequest(BaseModel):
     """
     A system prompt supplied separately from the conversation messages.
     """
-    frequency_penalty: Optional[float] = None
+    frequency_penalty: Optional[MessagesFrequencyPenalty] = None
     """
     Number between -2.0 and 2.0. Positive values penalize tokens based on
     their existing frequency in the generated text.
     """
-    logit_bias: Optional[Dict[str, float]] = None
+    logit_bias: Optional[Dict[str, MessagesLogitBiasValue]] = None
     """
-    Modify the likelihood of token IDs appearing in the response. Values
-    range from -100 to 100.
+    Modify the likelihood of token IDs appearing in the response.
+    Keys must be integer token IDs; values range from -100 to 100.
     """
     logprobs: Optional[bool] = None
     """
     Whether to return log probabilities of output tokens.
     """
-    max_tokens: Optional[int] = None
+    max_tokens: Optional[MessagesMaxTokens] = None
     """
     Maximum number of tokens that may be generated.
     """
-    presence_penalty: Optional[float] = None
+    presence_penalty: Optional[MessagesPresencePenalty] = None
     """
     Number between -2.0 and 2.0. Positive values penalize tokens based on
     whether they have appeared in the generated text.
     """
-    repetition_penalty: Optional[float] = None
+    repetition_penalty: Optional[MessagesRepetitionPenalty] = None
     """
     Number between 0.0 and 2.0 that penalizes repetition.
     """
@@ -84,7 +95,7 @@ class MessagesRequest(BaseModel):
     """
     Options for streaming responses.
     """
-    temperature: Optional[float] = None
+    temperature: Optional[MessagesTemperature] = None
     """
     Sampling temperature between 0 and 2.
     """
@@ -94,19 +105,19 @@ class MessagesRequest(BaseModel):
     """
     tools: Optional[List[MessagesTool]] = None
     """
-    Tools the model may call.
+    Tools the model may call. Tool names must be unique.
     """
-    top_logprobs: Optional[int] = None
+    top_logprobs: Optional[MessagesTopLogprobs] = None
     """
     Number of most-likely tokens returned at each position. Range 0-20.
     """
-    top_p: Optional[float] = None
+    top_p: Optional[MessagesTopP] = None
     """
     Nucleus sampling probability between 0 and 1.
     """
     service_tier: Optional[MessagesRequestServiceTier] = None
     """
-    Latency tier used to process the request.
+    Latency tier used to process the request. Empty or null uses the default behavior.
     """
     thinking: Optional[MessagesThinking] = None
     """

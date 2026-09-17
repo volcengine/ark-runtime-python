@@ -18,12 +18,14 @@ class ChatCompletionRequestToolMessage(BaseModel):
     """
     The role of the messages author. Always `tool`.
     """
-    content: ChatCompletionMessageContent
+    content: Optional[ChatCompletionMessageContent] = None
     """
-    The contents of the tool message.
+    The contents of the tool message. Missing or null content is
+    normalized to an empty string.
     """
-    tool_call_id: str
+    tool_call_id: Optional[str] = None
     """
-    Tool call that this message is responding to.
+    Tool call that this message is responding to. Missing or null IDs
+    are normalized to an empty string.
     """
     name: Optional[str] = None

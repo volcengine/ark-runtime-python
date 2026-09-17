@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, Union
 
 from arkruntime._models import BaseModel
 
@@ -20,4 +20,7 @@ class ChatCompletionContentPartImage(BaseModel):
     """
     The type of the content part. Always `image_url`.
     """
-    image_url: ChatCompletionContentPartImageImageUrl
+    image_url: Union[str, ChatCompletionContentPartImageImageUrl]
+    """
+    An image URL or base64 data string, or an object with image options.
+    """

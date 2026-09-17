@@ -6,22 +6,23 @@
 
 from __future__ import annotations
 
-from typing import Dict, Optional
+from typing import Union
 
-from typing_extensions import Annotated
-
-from arkruntime._models import BaseModel
 from pydantic import Field
+from typing_extensions import Annotated, TypeAliasType
 
-from .messages_output_format_type import MessagesOutputFormatType
+from .messages_output_format_json_object import MessagesOutputFormatJsonObject
+from .messages_output_format_json_schema import MessagesOutputFormatJsonSchema
+from .messages_output_format_text import MessagesOutputFormatText
 
-
-class MessagesOutputFormat(BaseModel):
-    type: MessagesOutputFormatType
-    """
-    The requested output format.
-    """
-    schema_: Annotated[Optional[Dict[str, object]], Field(alias="schema")] = None
-    """
-    JSON Schema used when `type` is `json_schema`.
-    """
+MessagesOutputFormat = TypeAliasType(
+    "MessagesOutputFormat",
+    Annotated[
+        Union[
+            MessagesOutputFormatText,
+            MessagesOutputFormatJsonObject,
+            MessagesOutputFormatJsonSchema,
+        ],
+        Field(discriminator="type"),
+    ],
+)

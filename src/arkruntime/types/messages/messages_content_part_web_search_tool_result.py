@@ -15,6 +15,10 @@ from .messages_web_search_tool_result_content import MessagesWebSearchToolResult
 
 
 class MessagesContentPartWebSearchToolResult(BaseModel):
+    """
+    Replays a public search result in an assistant message after its `server_tool_use`.
+    """
+
     type: Literal["web_search_tool_result"]
     """
     The type of the content part. Always `web_search_tool_result`.
@@ -23,5 +27,8 @@ class MessagesContentPartWebSearchToolResult(BaseModel):
     """
     The server-tool invocation this result answers.
     """
-    content: MessagesWebSearchToolResultContent
+    content: Optional[MessagesWebSearchToolResultContent]
+    """
+    Null is accepted on replay and normalized to an empty results array.
+    """
     caller: Optional[MessagesServerToolCaller] = None

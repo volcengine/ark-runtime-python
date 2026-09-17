@@ -18,13 +18,13 @@ class MessagesContentPartToolResult(BaseModel):
     """
     The type of the content part. Always `tool_result`.
     """
-    tool_use_id: str
+    tool_use_id: Optional[str] = None
     """
-    The tool invocation this result answers.
+    The tool invocation id. Missing, null, and empty ids are accepted for compatibility.
     """
-    content: MessagesToolResultContent
+    content: Optional[MessagesToolResultContent] = None
     """
-    The content returned by the tool.
+    The content returned by the tool. Missing or null content becomes an empty string.
     """
     is_error: Optional[bool] = None
     """

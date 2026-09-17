@@ -6,10 +6,11 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from pydantic import Field
+from typing_extensions import Annotated, TypeAliasType
 
-
-class MessagesRole(str, Enum):
-    assistant = "assistant"
-    user = "user"
-    system = "system"
+MessagesRole = TypeAliasType("MessagesRole", Annotated[str, Field(min_length=1)])
+"""
+object non-empty role is accepted; roles other than `user` and `assistant`
+are interpreted as `system`.
+"""

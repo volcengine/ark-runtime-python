@@ -22,7 +22,7 @@ class Skill(BaseModel):
 
     id: str
     """
-    Skill ID，形如 `skill_01XJ5...`。
+    Skill ID，形如 `skill-...`。
     """
     object: Literal["skill"]
     """

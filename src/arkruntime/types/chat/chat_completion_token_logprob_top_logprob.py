@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from typing import List
+from typing import List, Optional
 
 from arkruntime._models import BaseModel
 
@@ -14,4 +14,7 @@ from arkruntime._models import BaseModel
 class ChatCompletionTokenLogprobTopLogprob(BaseModel):
     token: str
     logprob: float
-    bytes: List[int]
+    bytes: Optional[List[int]]
+    """
+    UTF-8 bytes for the token, or `null` when no byte representation exists.
+    """

@@ -14,7 +14,7 @@ from arkruntime._models import BaseModel
 class MessagesToolChoiceTool(BaseModel):
     type: Literal["tool"]
     disable_parallel_tool_use: Optional[bool] = None
-    name: str
+    name: Optional[str]
     """
     The name of the tool the model must invoke.
     """

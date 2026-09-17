@@ -26,7 +26,7 @@ class Agent(BaseModel):
 
     id: str
     """
-    Agent ID，格式 `agent_<opaque>`。对外暴露给 session 引用。
+    Agent ID，形如 `agent-...`。对外暴露给 session 引用。
     """
     type: Literal["agent"]
     """

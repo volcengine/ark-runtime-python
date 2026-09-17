@@ -13,3 +13,4 @@ class RequestServiceTier(str, Enum):
     auto = "auto"
     default = "default"
     fast = "fast"
+    flex = "flex"

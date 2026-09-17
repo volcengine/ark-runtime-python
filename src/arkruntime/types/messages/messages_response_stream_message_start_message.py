@@ -20,6 +20,9 @@ class MessagesResponseStreamMessageStartMessage(BaseModel):
     id: str
     role: Literal["assistant"]
     content: List[object]
+    """
+    Content is initially empty; blocks arrive in subsequent stream events.
+    """
     model: str
     service_status: Optional[MessagesServiceStatus] = None
     stop_reason: Optional[MessagesResponseStopReason]

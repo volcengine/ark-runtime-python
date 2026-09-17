@@ -28,6 +28,7 @@ from ..._utils import (
 from ...pagination import AsyncCursorPage, SyncCursorPage
 
 # AUTOGEN-START create-imports
+from ...types.file.description_param import DescriptionParam
 from ...types.file.file_create_request_param import FileCreateRequestParam
 from ...types.file.file_deleted import FileDeleted
 from ...types.file.file_object import FileObject
@@ -61,6 +62,8 @@ class Files(SyncAPIResource):
         file: Optional[FileTypes] = None,
         # AUTOGEN-START create-kwargs
         purpose: Purpose,
+        model: Optional[str] = None,
+        description: Optional[DescriptionParam] = None,
         preprocess_configs: Optional[PreprocessConfigsParam] = None,
         expire_at: Optional[int] = None,
         url: Optional[str] = None,
@@ -91,6 +94,8 @@ class Files(SyncAPIResource):
             {
                 # AUTOGEN-START create-body
                 "purpose": purpose,
+                "model": model,
+                "description": description,
                 "preprocess_configs": preprocess_configs,
                 "expire_at": expire_at,
                 "url": url,
@@ -141,7 +146,7 @@ class Files(SyncAPIResource):
         self,
         *,
         # AUTOGEN-START list-kwargs
-        purpose: Optional[Literal["user_data", "agent"]] = None,
+        purpose: Optional[Literal["user_data", "agent", "voice"]] = None,
         after: Optional[str] = None,
         limit: Optional[int] = None,
         order: Optional[Literal["asc", "desc"]] = None,
@@ -232,6 +237,8 @@ class AsyncFiles(AsyncAPIResource):
         file: Optional[FileTypes] = None,
         # AUTOGEN-START create-kwargs
         purpose: Purpose,
+        model: Optional[str] = None,
+        description: Optional[DescriptionParam] = None,
         preprocess_configs: Optional[PreprocessConfigsParam] = None,
         expire_at: Optional[int] = None,
         url: Optional[str] = None,
@@ -249,6 +256,8 @@ class AsyncFiles(AsyncAPIResource):
             {
                 # AUTOGEN-START create-body
                 "purpose": purpose,
+                "model": model,
+                "description": description,
                 "preprocess_configs": preprocess_configs,
                 "expire_at": expire_at,
                 "url": url,
@@ -299,7 +308,7 @@ class AsyncFiles(AsyncAPIResource):
         self,
         *,
         # AUTOGEN-START list-kwargs
-        purpose: Optional[Literal["user_data", "agent"]] = None,
+        purpose: Optional[Literal["user_data", "agent", "voice"]] = None,
         after: Optional[str] = None,
         limit: Optional[int] = None,
         order: Optional[Literal["asc", "desc"]] = None,

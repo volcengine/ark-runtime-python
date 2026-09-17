@@ -21,11 +21,15 @@ class MessagesUsage(BaseModel):
 
     input_tokens: Optional[int] = None
     """
-    Number of tokens in the prompt.
+    Number of prompt tokens excluding tokens read from the prefill cache.
     """
     output_tokens: Optional[int] = None
     """
     Number of tokens in the generated completion.
+    """
+    cache_creation_input_tokens: int
+    """
+    Cache-creation tokens are not currently supported; this field is returned as zero.
     """
     cache_read_input_tokens: Optional[int] = None
     """
@@ -37,5 +41,5 @@ class MessagesUsage(BaseModel):
     """
     iterations: Optional[List[MessagesIterationUsage]] = None
     """
-    One token-usage record for each model iteration.
+    One token-usage record per model iteration, included for multi-round requests.
     """

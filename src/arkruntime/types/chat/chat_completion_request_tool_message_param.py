@@ -17,10 +17,16 @@ class ChatCompletionRequestToolMessageParam(TypedDict, total=False):
     role: Required[Literal["tool"]]
     """The role of the messages author. Always `tool`."""
 
-    content: Required[ChatCompletionMessageContentParam]
-    """The contents of the tool message."""
+    content: Optional[Optional[ChatCompletionMessageContentParam]]
+    """
+    The contents of the tool message. Missing or null content is
+    normalized to an empty string.
+    """
 
-    tool_call_id: Required[str]
-    """Tool call that this message is responding to."""
+    tool_call_id: Optional[Optional[str]]
+    """
+    Tool call that this message is responding to. Missing or null IDs
+    are normalized to an empty string.
+    """
 
     name: Optional[str]

@@ -20,7 +20,7 @@ class MemoryStore(BaseModel):
 
     id: str
     """
-    MemoryStore ID。
+    MemoryStore ID，形如 `memstore-...`。
     """
     type: Literal["memory_store"]
     """

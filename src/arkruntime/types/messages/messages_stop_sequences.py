@@ -6,11 +6,14 @@
 
 from __future__ import annotations
 
-from typing import List, Union
+from typing import List, Optional, Union
 
 from typing_extensions import TypeAliasType
 
-MessagesStopSequences = TypeAliasType("MessagesStopSequences", Union[str, List[str]])
+MessagesStopSequences = TypeAliasType(
+    "MessagesStopSequences", Optional[Union[str, List[str]]]
+)
 """
-One stop sequence or up to four stop sequences.
+One stop sequence or an array of stop sequences. The count limit is
+model-dependent (default four); null is treated as an empty list.
 """

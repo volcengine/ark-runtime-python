@@ -23,6 +23,5 @@ class ChatCompletionResponseFormat(BaseModel):
     """
     json_schema: Optional[ChatCompletionResponseFormatJsonSchema] = None
     """
-    Structured Outputs configuration; required when `type` is
-    `json_schema`.
+    Structured Outputs configuration for `json_schema` responses.
     """

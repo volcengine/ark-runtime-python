@@ -6,13 +6,13 @@
 
 from __future__ import annotations
 
-from typing import Literal, Optional
+from typing import Literal
 
 from arkruntime._models import BaseModel
 
-from .messages_context_management_keep import MessagesContextManagementKeep
+from .messages_document_content import MessagesDocumentContent
 
 
-class MessagesContextManagementClearThinking(BaseModel):
-    type: Literal["clear_thinking"]
-    keep: Optional[MessagesContextManagementKeep] = None
+class MessagesContentPartDocumentSourceContent(BaseModel):
+    type: Literal["content"]
+    content: MessagesDocumentContent

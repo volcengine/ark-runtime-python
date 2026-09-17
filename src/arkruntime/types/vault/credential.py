@@ -20,7 +20,7 @@ class Credential(BaseModel):
 
     id: str
     """
-    Credential ID。
+    Credential ID，形如 `vcrd-...`。
     """
     type: Literal["vault_credential"]
     """

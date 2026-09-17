@@ -18,9 +18,10 @@ class ChatCompletionRequestUserMessage(BaseModel):
     """
     The role of the messages author. Always `user`.
     """
-    content: ChatCompletionMessageContent
+    content: Optional[ChatCompletionMessageContent] = None
     """
-    The contents of the user message.
+    The contents of the user message. Missing, null, or empty content is
+    normalized to an empty string.
     """
     name: Optional[str] = None
     """

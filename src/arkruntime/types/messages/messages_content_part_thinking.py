@@ -18,7 +18,7 @@ class MessagesContentPartThinking(BaseModel):
     """
     thinking: Optional[str] = None
     """
-    The model's thinking content.
+    The model's thinking content. At least one of `thinking` or `signature` is required.
     """
     signature: Optional[str] = None
     """

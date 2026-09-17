@@ -8,7 +8,10 @@ from __future__ import annotations
 
 from typing import Literal
 
+from typing_extensions import Annotated
+
 from arkruntime._models import BaseModel
+from pydantic import Field
 
 
 class MessagesWebSearchToolResultError(BaseModel):
@@ -16,4 +19,4 @@ class MessagesWebSearchToolResultError(BaseModel):
     """
     The type of the result. Always `web_search_tool_result_error`.
     """
-    error_code: str
+    error_code: Annotated[str, Field(min_length=1)]
