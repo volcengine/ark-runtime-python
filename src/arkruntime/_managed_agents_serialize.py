@@ -26,7 +26,7 @@ def _dump(value: Any) -> Any:
     - `NOT_GIVEN` → dropped by the caller (returned as-is; caller filters).
     - `pydantic.BaseModel` → `.model_dump(exclude_unset=True, by_alias=True)`
       so unset Optional fields don't leak `null` onto the wire (server-side
-      is Anthropic-flavoured `omit == null == unset`).
+      uses the `omit == null == unset` convention).
     - `enum.Enum` → its `.value`. Handles enum-typed fields (e.g.
       `EnvConfigType.CLOUD` → `"cloud"`) that get passed positionally.
     - `list` / `tuple` → element-wise recursion.
