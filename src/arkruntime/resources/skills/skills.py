@@ -6,6 +6,7 @@ from ..._base_client import make_request_options
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._types import NOT_GIVEN, NotGiven
 from ...types.skill.skill import Skill
+from ...types.skill.skill_version import SkillVersion
 
 __all__ = ["Skills", "AsyncSkills"]
 
@@ -70,6 +71,35 @@ class Skills(SyncAPIResource):
             cast_to=Skill,
         )
 
+    def create_version(
+        self,
+        skill_id: str,
+        *,
+        files: FileArg,
+        display_title: Optional[str] | NotGiven = NOT_GIVEN,
+        extra_headers=None,
+        extra_query=None,
+        extra_body=None,
+        timeout=None,
+    ) -> SkillVersion:
+        if not skill_id:
+            raise ValueError("skill_id is required")
+        body: dict = {}
+        if display_title is not NOT_GIVEN and display_title is not None:
+            body["display_title"] = display_title
+        return self._post(
+            f"{_PREFIX}/{skill_id}/versions",
+            body=body,
+            files=_files_kwarg(files),
+            options=make_request_options(
+                extra_headers=_multipart_headers(extra_headers),
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+            ),
+            cast_to=SkillVersion,
+        )
+
 
 class AsyncSkills(AsyncAPIResource):
     async def create(
@@ -109,4 +139,33 @@ class AsyncSkills(AsyncAPIResource):
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
             cast_to=Skill,
+        )
+
+    async def create_version(
+        self,
+        skill_id: str,
+        *,
+        files: FileArg,
+        display_title: Optional[str] | NotGiven = NOT_GIVEN,
+        extra_headers=None,
+        extra_query=None,
+        extra_body=None,
+        timeout=None,
+    ) -> SkillVersion:
+        if not skill_id:
+            raise ValueError("skill_id is required")
+        body: dict = {}
+        if display_title is not NOT_GIVEN and display_title is not None:
+            body["display_title"] = display_title
+        return await self._post(
+            f"{_PREFIX}/{skill_id}/versions",
+            body=body,
+            files=_files_kwarg(files),
+            options=make_request_options(
+                extra_headers=_multipart_headers(extra_headers),
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+            ),
+            cast_to=SkillVersion,
         )

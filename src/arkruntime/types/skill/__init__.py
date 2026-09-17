@@ -7,11 +7,15 @@
 from __future__ import annotations
 
 from .create_skill_request import CreateSkillRequest
+from .create_skill_version_request import CreateSkillVersionRequest
 from .skill import Skill
+from .skill_version import SkillVersion
 
 __all__ = [
     "CreateSkillRequest",
+    "CreateSkillVersionRequest",
     "Skill",
+    "SkillVersion",
 ]
 
 # Hand-written extras (preserved across regen via Makefile rsync --exclude=*_shim.py).
