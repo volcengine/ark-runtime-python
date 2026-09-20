@@ -61,6 +61,11 @@ class _ListAPI:
         self.sent_event.set()
 
 
+def _finish_execution(runner: SessionToolRunner) -> None:
+    completed = runner._state.execution_done.get(timeout=1)
+    runner._state.finish_tool_execution(completed)
+
+
 def test_list_fallback_retries_full_history_and_converts_custom_tool_error(tmp_path) -> None:
     api = _ListAPI()
 
@@ -126,6 +131,7 @@ def test_confirmed_tool_is_released_once_when_post_fails(tmp_path) -> None:
     runner._state.retry_send_event = lambda _event, _call_id: False
 
     runner._state.release_confirmed_tool_uses()
+    _finish_execution(runner)
     runner._state.release_confirmed_tool_uses()
 
     assert len(executions) == 1
@@ -297,6 +303,7 @@ def test_recovered_results_are_filtered_against_current_blockers(tmp_path) -> No
         ],
         reconcile=True,
     )
+    _finish_execution(runner)
 
     assert len(executions) == 1
     assert len(sent) == 1
@@ -304,6 +311,297 @@ def test_recovered_results_are_filtered_against_current_blockers(tmp_path) -> No
     assert set(store.discarded) == {"foreign-call", "stale-call"}
     assert not runner._state.pending_results
     assert not runner._state.recovered_results
+
+
+def test_interrupt_cancels_active_tool_without_posting_result(tmp_path) -> None:
+    started = threading.Event()
+    canceled = threading.Event()
+
+    def block(_input, context):
+        started.set()
+        context.cancel_event.wait(1)
+        canceled.set()
+        return text_result("late")
+
+    store = _RecordingStore()
+    tool = FunctionTool("blocking", block)
+    runner = SessionToolRunner(
+        object(),
+        "session-1",
+        SessionToolRunnerOptions(
+            tools=ToolSet(),
+            tool_context=ToolContext(workdir=str(tmp_path)),
+            custom_tools={"blocking": tool},
+            result_store=store,
+        ),
+    )
+    sent = []
+    runner._state.retry_send_event = lambda event, _call_id: sent.append(event) or True
+    tool_use = Event(
+        id="tool-1",
+        type="agent.custom_tool_use",
+        name="blocking",
+        custom_tool_use_id="call-1",
+        session_thread_id="thread-1",
+        input={},
+    )
+
+    runner._state.handle_stream_event(tool_use)
+    assert started.wait(1)
+    runner._state.handle_stream_event(Event(id="interrupt-1", type="user.interrupt", session_thread_id="thread-1"))
+    assert canceled.wait(1)
+    _finish_execution(runner)
+
+    assert not sent
+    assert runner._state.is_answered("call-1")
+    assert store.discarded == ["call-1"]
+
+
+def test_interrupt_only_cancels_target_thread(tmp_path) -> None:
+    started = threading.Event()
+    release = threading.Event()
+
+    def block(_input, context):
+        started.set()
+        while not release.is_set() and not context.cancel_event.is_set():
+            time.sleep(0.005)
+        return text_result("done")
+
+    tool = FunctionTool("blocking", block)
+    runner = SessionToolRunner(
+        object(),
+        "session-1",
+        SessionToolRunnerOptions(
+            tools=ToolSet(),
+            tool_context=ToolContext(workdir=str(tmp_path)),
+            custom_tools={"blocking": tool},
+        ),
+    )
+    runner._state.retry_send_event = lambda _event, _call_id: True
+    runner._state.handle_stream_event(
+        Event(
+            id="tool-1",
+            type="agent.custom_tool_use",
+            name="blocking",
+            custom_tool_use_id="call-1",
+            session_thread_id="thread-a",
+            input={},
+        )
+    )
+    assert started.wait(1)
+
+    runner._state.handle_stream_event(Event(id="interrupt-other", type="user.interrupt", session_thread_id="thread-b"))
+    assert not runner._state.is_answered("call-1")
+    assert not runner._state.active_execution.cancel_event.is_set()
+
+    runner._state.handle_interrupt(Event(type="user.interrupt", session_thread_id="thread-a"))
+    _finish_execution(runner)
+    assert runner._state.is_answered("call-1")
+    assert runner._state.active_execution is None
+
+
+def test_list_replay_of_anonymous_interrupt_does_not_redispatch_or_cancel_later_tool(tmp_path) -> None:
+    started = threading.Event()
+    release = threading.Event()
+    executions = []
+
+    def block(_input, context):
+        executions.append(True)
+        started.set()
+        while not release.is_set() and not context.cancel_event.is_set():
+            time.sleep(0.005)
+        return text_result("done")
+
+    tool = FunctionTool("blocking", block)
+    runner = SessionToolRunner(
+        object(),
+        "session-1",
+        SessionToolRunnerOptions(
+            tools=ToolSet(),
+            tool_context=ToolContext(workdir=str(tmp_path)),
+            custom_tools={"blocking": tool},
+        ),
+    )
+    runner._state.retry_send_event = lambda _event, _call_id: True
+    events = [
+        Event(
+            id="old-call",
+            type="agent.custom_tool_use",
+            name="blocking",
+            custom_tool_use_id="old-call",
+            session_thread_id="thread-1",
+            input={},
+        ),
+        Event(type="user.interrupt", session_thread_id="thread-1"),
+        Event(
+            id="new-call",
+            type="agent.custom_tool_use",
+            name="blocking",
+            custom_tool_use_id="new-call",
+            session_thread_id="thread-1",
+            input={},
+        ),
+    ]
+
+    runner._state.process_listed_events(events, reconcile=False)
+    assert started.wait(1)
+    runner._state.process_listed_events(events, reconcile=False)
+    runner._state.process_listed_events(events, reconcile=True)
+
+    assert runner._state.is_answered("old-call")
+    assert not runner._state.is_answered("new-call")
+    assert len(executions) == 1
+    assert not runner._state.active_execution.cancel_event.is_set()
+    assert "old-call" not in runner._state.tool_use_events
+
+    runner._state.handle_interrupt(Event(type="user.interrupt"))
+    _finish_execution(runner)
+
+
+def test_list_interrupt_cancels_tool_from_earlier_poll(tmp_path) -> None:
+    started = threading.Event()
+    canceled = threading.Event()
+
+    def block(_input, context):
+        started.set()
+        while not context.cancel_event.is_set():
+            time.sleep(0.005)
+        canceled.set()
+        return text_result("late")
+
+    runner = SessionToolRunner(
+        object(),
+        "session-1",
+        SessionToolRunnerOptions(
+            tools=ToolSet(),
+            tool_context=ToolContext(workdir=str(tmp_path)),
+            custom_tools={"blocking": FunctionTool("blocking", block)},
+        ),
+    )
+    runner._state.retry_send_event = lambda _event, _call_id: True
+    tool_use = Event(
+        id="cross-poll-call",
+        type="agent.custom_tool_use",
+        name="blocking",
+        custom_tool_use_id="cross-poll-call",
+        session_thread_id="thread-1",
+        input={},
+    )
+    runner._state.process_listed_events([tool_use], reconcile=False)
+    assert started.wait(1)
+
+    runner._state.process_listed_events(
+        [
+            tool_use,
+            Event(
+                type="user.interrupt",
+                processed_at="2026-09-20T00:00:00Z",
+                session_thread_id="thread-1",
+            ),
+        ],
+        reconcile=False,
+    )
+
+    assert canceled.wait(1)
+    _finish_execution(runner)
+    assert runner._state.is_answered("cross-poll-call")
+
+
+def test_serial_queue_interrupt_removes_matching_tool_only(tmp_path) -> None:
+    active_started = threading.Event()
+    active_canceled = threading.Event()
+    queued_started = threading.Event()
+
+    def active_tool(_input, context):
+        active_started.set()
+        while not context.cancel_event.is_set():
+            time.sleep(0.005)
+        active_canceled.set()
+        return text_result("late")
+
+    def queued_tool(_input, _context):
+        queued_started.set()
+        return text_result("unexpected")
+
+    runner = SessionToolRunner(
+        object(),
+        "session-1",
+        SessionToolRunnerOptions(
+            tools=ToolSet(),
+            tool_context=ToolContext(workdir=str(tmp_path)),
+            custom_tools={
+                "active": FunctionTool("active", active_tool),
+                "queued": FunctionTool("queued", queued_tool),
+            },
+        ),
+    )
+    runner._state.retry_send_event = lambda _event, _call_id: True
+    runner._state.process_listed_events(
+        [
+            Event(
+                id="active-call",
+                type="agent.custom_tool_use",
+                name="active",
+                custom_tool_use_id="active-call",
+                session_thread_id="thread-a",
+                input={},
+            ),
+            Event(
+                id="queued-call",
+                type="agent.custom_tool_use",
+                name="queued",
+                custom_tool_use_id="queued-call",
+                session_thread_id="thread-b",
+                input={},
+            ),
+        ],
+        reconcile=False,
+    )
+    assert active_started.wait(1)
+    assert not queued_started.wait(0.05)
+
+    runner._state.handle_interrupt(Event(type="user.interrupt", session_thread_id="thread-b"))
+
+    assert runner._state.is_answered("queued-call")
+    assert not runner._state.is_answered("active-call")
+    assert not active_canceled.wait(0.05)
+
+    runner._state.handle_interrupt(Event(type="user.interrupt"))
+    _finish_execution(runner)
+    assert not queued_started.is_set()
+
+
+def test_list_end_turn_arms_idle_after_tool_completes(tmp_path) -> None:
+    runner = SessionToolRunner(
+        object(),
+        "session-1",
+        SessionToolRunnerOptions(
+            tools=ToolSet(),
+            tool_context=ToolContext(workdir=str(tmp_path)),
+            custom_tools={"custom": FunctionTool("custom", lambda _input, _context: text_result("ok"))},
+            max_idle_seconds=60,
+        ),
+    )
+    runner._state.retry_send_event = lambda _event, _call_id: True
+    tool_use = Event(
+        id="idle-call",
+        type="agent.custom_tool_use",
+        name="custom",
+        custom_tool_use_id="idle-call",
+        input={},
+    )
+    runner._state.process_listed_events([tool_use], reconcile=False)
+    runner._state.process_listed_events(
+        [tool_use, Event(id="idle-end-turn", type="session.status_idle", stop_reason={"type": "end_turn"})],
+        reconcile=False,
+    )
+    assert runner._state.idle_arm_pending
+    assert not runner._state.idle_armed_at
+
+    _finish_execution(runner)
+
+    assert not runner._state.idle_arm_pending
+    assert runner._state.idle_armed_at
 
 
 def test_current_blocker_reuses_recovered_result_without_reexecution(tmp_path) -> None:
