@@ -14,6 +14,7 @@ from ..._resource import AsyncAPIResource, SyncAPIResource
 from ...types.environment.heartbeat_work_response import HeartbeatWorkResponse
 from ...types.environment.stop_work_body import StopWorkBody
 from ...types.environment.work_item import WorkItem
+from ...types.environment.work_stop_reason import WorkStopReason
 
 __all__ = ["EnvironmentWork", "AsyncEnvironmentWork"]
 
@@ -40,6 +41,11 @@ def _worker_headers(worker_id: str, extra_headers: Optional[dict]) -> dict:
     if worker_id:
         headers[_WORKER_ID_HEADER] = worker_id
     return headers
+
+
+def _validate_stop_reason(force: bool, reason: Optional[WorkStopReason]) -> None:
+    if reason is not None and not force:
+        raise ValueError("reason requires force=True")
 
 
 class EnvironmentWork(SyncAPIResource):
@@ -124,12 +130,14 @@ class EnvironmentWork(SyncAPIResource):
         work_id: str,
         *,
         force: bool = False,
+        reason: Optional[WorkStopReason] = None,
         extra_headers=None,
         timeout: float | httpx.Timeout | None = None,
     ) -> WorkItem:
         if not work_id:
             raise ValueError("work_id is required")
-        body = StopWorkBody(force=True) if force else StopWorkBody()
+        _validate_stop_reason(force, reason)
+        body = StopWorkBody(force=True if force else None, reason=reason)
         return self._post_without_retry(
             _path(environment_id, f"{quote(work_id, safe='')}/stop"),
             body=dump_body(body.model_dump(exclude_none=True, by_alias=True)),
@@ -220,12 +228,14 @@ class AsyncEnvironmentWork(AsyncAPIResource):
         work_id: str,
         *,
         force: bool = False,
+        reason: Optional[WorkStopReason] = None,
         extra_headers=None,
         timeout: float | httpx.Timeout | None = None,
     ) -> WorkItem:
         if not work_id:
             raise ValueError("work_id is required")
-        body = StopWorkBody(force=True) if force else StopWorkBody()
+        _validate_stop_reason(force, reason)
+        body = StopWorkBody(force=True if force else None, reason=reason)
         return await self._post_without_retry(
             _path(environment_id, f"{quote(work_id, safe='')}/stop"),
             body=dump_body(body.model_dump(exclude_none=True, by_alias=True)),

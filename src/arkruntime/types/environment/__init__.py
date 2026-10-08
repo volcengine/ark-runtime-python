@@ -26,6 +26,7 @@ from .volc_tag import VolcTag
 from .work_data import WorkData
 from .work_item import WorkItem
 from .work_state import WorkState
+from .work_stop_reason import WorkStopReason
 
 __all__ = [
     "CreateEnvironmentRequest",
@@ -48,6 +49,7 @@ __all__ = [
     "WorkData",
     "WorkItem",
     "WorkState",
+    "WorkStopReason",
 ]
 
 # Hand-written extras (preserved across regen via Makefile rsync --exclude=*_shim.py).
