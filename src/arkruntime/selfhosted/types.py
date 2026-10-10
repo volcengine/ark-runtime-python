@@ -23,6 +23,7 @@ from arkruntime.types.environment import (
 EVENT_TYPE_AGENT_TOOL_USE = "agent.tool_use"
 EVENT_TYPE_AGENT_CUSTOM_TOOL_USE = "agent.custom_tool_use"
 EVENT_TYPE_USER_TOOL_CONFIRMATION = "user.tool_confirmation"
+EVENT_TYPE_USER_INTERRUPT = "user.interrupt"
 EVENT_TYPE_USER_TOOL_RESULT = "user.tool_result"
 EVENT_TYPE_USER_CUSTOM_TOOL_RESULT = "user.custom_tool_result"
 EVENT_TYPE_SESSION_STATUS_IDLE = "session.status_idle"

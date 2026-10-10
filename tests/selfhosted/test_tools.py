@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import base64
 import threading
 import time
 
@@ -12,6 +13,7 @@ from arkruntime.selfhosted.tools import (
     BashTool,
     EditFileTool,
     GrepTool,
+    ReadFileTool,
     ToolContext,
     WriteFileTool,
     _is_sensitive_env_key,
@@ -68,6 +70,99 @@ def test_bash_honors_worker_cancellation(tmp_path) -> None:
     assert time.monotonic() - started < 2
     assert result.is_error
     assert "canceled" in _text(result)
+
+
+@pytest.mark.parametrize(
+    "name, data, block_type, media_type",
+    [
+        ("photo.jpg", b"\xff\xd8\xff\xe0data", "image", "image/jpeg"),
+        ("image.png", b"\x89PNG\r\n\x1a\ndata", "image", "image/png"),
+        ("image.gif", b"GIF89adata", "image", "image/gif"),
+        ("image.webp", b"RIFF\x04\x00\x00\x00WEBPdata", "image", "image/webp"),
+        ("document.pdf", b"%PDF-1.7\ndata", "document", "application/pdf"),
+    ],
+)
+def test_read_returns_native_media_block(tmp_path, name, data, block_type, media_type) -> None:
+    (tmp_path / name).write_bytes(data)
+
+    result = ReadFileTool().execute({"file_path": name}, ToolContext(workdir=str(tmp_path)))
+
+    assert not result.is_error
+    block = list(result.content)[0]
+    assert block.type == block_type
+    assert block.source == {
+        "type": "base64",
+        "media_type": media_type,
+        "data": base64.b64encode(data).decode("ascii"),
+    }
+
+
+def test_read_rejects_ranges_and_oversized_media(tmp_path) -> None:
+    data = b"\x89PNG\r\n\x1a\ndata"
+    (tmp_path / "image.png").write_bytes(data)
+    tool = ReadFileTool()
+
+    ranged = tool.execute({"path": "image.png", "limit": 1}, ToolContext(workdir=str(tmp_path)))
+    invalid = tool.execute({"path": "image.png", "limit": "10KB"}, ToolContext(workdir=str(tmp_path)))
+    oversized = tool.execute(
+        {"path": "image.png"}, ToolContext(workdir=str(tmp_path), max_media_file_bytes=len(data) - 1)
+    )
+
+    assert ranged.is_error
+    assert _text(ranged) == "view_range, offset, and limit are only supported for text files"
+    assert invalid.is_error
+    assert _text(invalid) == "limit must be an integer"
+    assert oversized.is_error
+    assert _text(oversized) == f"media file too large: {len(data)} bytes"
+
+
+def test_read_uses_managed_agent_line_range(tmp_path) -> None:
+    (tmp_path / "example.txt").write_text("a\nb\nc\nd\n")
+    tool = ReadFileTool()
+    context = ToolContext(workdir=str(tmp_path))
+
+    whole = tool.execute({"file_path": "example.txt"}, context)
+    ranged = tool.execute({"file_path": "example.txt", "offset": 2, "limit": 2}, context)
+    invalid = tool.execute({"file_path": "example.txt", "offset": 0}, context)
+
+    assert not whole.is_error
+    assert _text(whole) == "     1\ta\n     2\tb\n     3\tc\n     4\td\n"
+    assert not ranged.is_error
+    assert _text(ranged) == "     2\tb\n     3\tc\n\n[truncated: showing lines 2-3 of 4]\n"
+    assert invalid.is_error
+    assert _text(invalid) == "offset is the 1-based start line and must be >= 1, got 0"
+
+
+def test_read_marks_truncated_lines(tmp_path) -> None:
+    (tmp_path / "long.txt").write_text("a" * 2001)
+
+    result = ReadFileTool().execute({"file_path": "long.txt"}, ToolContext(workdir=str(tmp_path)))
+
+    assert not result.is_error
+    assert _text(result) == f"     1\t{'a' * 2000} [line truncated]\n"
+
+
+def test_read_keeps_legacy_inputs_without_ambiguity(tmp_path) -> None:
+    (tmp_path / "example.txt").write_text("a\nb\nc\n")
+    tool = ReadFileTool()
+    context = ToolContext(workdir=str(tmp_path))
+
+    for tool_input in (
+        {"path": "example.txt"},
+        {"file": "example.txt"},
+        {"file_path": "example.txt", "path": "example.txt"},
+    ):
+        assert not tool.execute(tool_input, context).is_error
+    legacy_range = tool.execute({"file_path": "example.txt", "view_range": [2, 3]}, context)
+    path_conflict = tool.execute({"file_path": "example.txt", "path": "other.txt"}, context)
+    range_conflict = tool.execute({"file_path": "example.txt", "view_range": [1, 1], "offset": 1}, context)
+
+    assert not legacy_range.is_error
+    assert _text(legacy_range) == "b\nc"
+    assert path_conflict.is_error
+    assert _text(path_conflict) == "file_path, path, and file must not conflict"
+    assert range_conflict.is_error
+    assert _text(range_conflict) == "view_range cannot be combined with offset or limit"
 
 
 def test_grep_skips_symlink_that_escapes_workdir(tmp_path) -> None:

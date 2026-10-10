@@ -8,8 +8,9 @@ import queue
 import random
 import threading
 import time
+from collections import deque
 from dataclasses import dataclass, field, replace
-from typing import Any, Dict, Iterable, List, Optional, Set
+from typing import Any, Deque, Dict, Iterable, List, Optional, Set
 
 from .tool_result_store import FileToolResultStore
 from .tools import Tool, ToolContext, ToolResult, ToolSet, error_result
@@ -27,6 +28,7 @@ from .types import (
     EVENT_TYPE_SESSION_STATUS_RUNNING,
     EVENT_TYPE_SESSION_STATUS_TERMINATED,
     EVENT_TYPE_USER_CUSTOM_TOOL_RESULT,
+    EVENT_TYPE_USER_INTERRUPT,
     EVENT_TYPE_USER_TOOL_CONFIRMATION,
     EVENT_TYPE_USER_TOOL_RESULT,
     PERMISSION_ALLOW,
@@ -98,6 +100,25 @@ class SessionToolRunnerOptions:
     on_tool_error: Any = None
 
 
+@dataclass
+class _PendingToolEvent:
+    event: Event
+    custom: bool
+    confirmation: str = ""
+
+
+@dataclass
+class _ActiveToolExecution:
+    pending: _PendingToolEvent
+    cancel_event: _ToolCancelEvent
+
+
+@dataclass
+class _ToolExecutionResult:
+    pending: _PendingToolEvent
+    result: ToolResult
+
+
 class SessionToolRunner:
     def __init__(self, api: Any, session_id: str, options: SessionToolRunnerOptions) -> None:
         if not session_id:
@@ -128,26 +149,29 @@ class SessionToolRunner:
         return self._stop.is_set() or bool(self.options.stop_event and self.options.stop_event.is_set())
 
     def run(self) -> List[ToolCallResult]:
-        if self.options.result_store is not None:
-            pending, processed = self.options.result_store.recover()
-            self._state.pending_results.update(pending)
-            self._state.recovered_results.update(pending)
-            self._state.processed.update(processed)
-            self._state.answered.update(processed)
-        if self.options.prefer_stream and hasattr(self.api, "stream_events"):
-            try:
-                self._consume_stream_loop()
-                return self._results
-            except EventStreamUnsupported:
-                pass
-            except (IdleTimeout, SessionTerminated):
-                raise
-            except Exception:
-                if self._is_stopped():
+        try:
+            if self.options.result_store is not None:
+                pending, processed = self.options.result_store.recover()
+                self._state.pending_results.update(pending)
+                self._state.recovered_results.update(pending)
+                self._state.processed.update(processed)
+                self._state.answered.update(processed)
+            if self.options.prefer_stream and hasattr(self.api, "stream_events"):
+                try:
+                    self._consume_stream_loop()
                     return self._results
-                raise
-        self._consume_list()
-        return self._results
+                except EventStreamUnsupported:
+                    pass
+                except (IdleTimeout, SessionTerminated):
+                    raise
+                except Exception:
+                    if self._is_stopped():
+                        return self._results
+                    raise
+            self._consume_list()
+            return self._results
+        finally:
+            self._state.cancel_active_execution()
 
     def _consume_stream_loop(self) -> None:
         backoff = STREAM_BACKOFF_START
@@ -158,6 +182,7 @@ class SessionToolRunner:
             pump.start()
             self._state.reconcile()
             while not self._is_stopped() and (pump.is_alive() or not event_queue.empty()):
+                self._state.drain_execution_done()
                 self._state.flush_results()
                 self._raise_if_idle_expired()
                 try:
@@ -204,6 +229,7 @@ class SessionToolRunner:
 
     def _consume_list(self) -> None:
         while not self._is_stopped():
+            self._state.drain_execution_done()
             self._state.reconcile(reconcile=False)
             self._state.flush_results()
             self._raise_if_idle_expired()
@@ -212,6 +238,7 @@ class SessionToolRunner:
     def _sleep_or_idle(self, seconds: float) -> None:
         deadline = time.monotonic() + max(seconds, 0)
         while not self._is_stopped():
+            self._state.drain_execution_done()
             self._raise_if_idle_expired()
             remaining = deadline - time.monotonic()
             if remaining <= 0:
@@ -239,6 +266,11 @@ class _RunnerState:
         self.pending_ask: Dict[str, Event] = {}
         self.confirmations: Dict[str, Event] = {}
         self.external_tools: Dict[str, Event] = {}
+        self.tool_use_events: Dict[str, Event] = {}
+        self.scheduled: Set[str] = set()
+        self.execution_queue: Deque[_PendingToolEvent] = deque()
+        self.active_execution: Optional[_ActiveToolExecution] = None
+        self.execution_done: "queue.Queue[_ToolExecutionResult]" = queue.Queue()
         self.session_tool_uses: Set[str] = set()
         self.tool_uses_since_status: Set[str] = set()
         self.blocking_event_ids: Set[str] = set()
@@ -284,6 +316,7 @@ class _RunnerState:
     def process_listed_events(self, events: Iterable[Event], reconcile: bool = False) -> None:
         pending: List[Event] = []
         pending_ids: Dict[str, bool] = {}
+        replayed_tool_uses: Set[str] = set()
         touched_idle = False
         last_was_end_turn = False
         for event in events:
@@ -299,10 +332,13 @@ class _RunnerState:
                 )
             if event.type == EVENT_TYPE_USER_TOOL_CONFIRMATION:
                 self.record_confirmation(event)
+            elif event.type == EVENT_TYPE_USER_INTERRUPT:
+                self.handle_interrupt(event, replayed_tool_uses if reconcile else None)
             elif event.type in (EVENT_TYPE_USER_TOOL_RESULT, EVENT_TYPE_USER_CUSTOM_TOOL_RESULT):
                 self.mark_answered(tool_result_call_id(event))
             elif event.type in (EVENT_TYPE_AGENT_TOOL_USE, EVENT_TYPE_AGENT_CUSTOM_TOOL_USE):
                 call_id = tool_use_call_id(event)
+                replayed_tool_uses.add(call_id)
                 if call_id and not pending_ids.get(call_id):
                     pending.append(event)
                     pending_ids[call_id] = True
@@ -318,10 +354,7 @@ class _RunnerState:
             self.handle_tool_use(event, event.type == EVENT_TYPE_AGENT_CUSTOM_TOOL_USE)
         self.release_confirmed_tool_uses()
         if touched_idle and last_was_end_turn:
-            if self.has_unblocked_outstanding_tool(pending):
-                self.disarm_idle()
-            else:
-                self.arm_idle()
+            self.arm_idle()
 
     def note_idle_event(self, event: Event) -> None:
         if event.type == EVENT_TYPE_USER_TOOL_CONFIRMATION:
@@ -343,6 +376,8 @@ class _RunnerState:
         if event.type == EVENT_TYPE_USER_TOOL_CONFIRMATION:
             self.record_confirmation(event)
             self.release_confirmed_tool_uses()
+        elif event.type == EVENT_TYPE_USER_INTERRUPT:
+            self.handle_interrupt(event)
         elif event.type in (EVENT_TYPE_USER_TOOL_RESULT, EVENT_TYPE_USER_CUSTOM_TOOL_RESULT):
             self.mark_answered(tool_result_call_id(event))
         elif event.type in (EVENT_TYPE_AGENT_TOOL_USE, EVENT_TYPE_AGENT_CUSTOM_TOOL_USE):
@@ -352,6 +387,8 @@ class _RunnerState:
 
     def mark_event_seen(self, event: Event) -> bool:
         key = event.id or tool_use_call_id(event)
+        if not key and event.type == EVENT_TYPE_USER_INTERRUPT:
+            key = f"interrupt:{event.processed_at}:{event.session_thread_id}"
         if not key:
             return True
         if self.seen.get(key):
@@ -368,6 +405,7 @@ class _RunnerState:
         self.recovered_results.discard(call_id)
         self.pending_ask.pop(call_id, None)
         self.external_tools.pop(call_id, None)
+        self.tool_use_events.pop(call_id, None)
         self.maybe_arm_pending_idle()
 
     def is_answered(self, call_id: str) -> bool:
@@ -384,19 +422,9 @@ class _RunnerState:
             self.pending_ask.pop(tool_use_call_id(event), None)
             self.handle_tool_use(event, event.type == EVENT_TYPE_AGENT_CUSTOM_TOOL_USE)
 
-    def has_unblocked_outstanding_tool(self, pending: Iterable[Event]) -> bool:
-        for event in pending:
-            call_id = tool_use_call_id(event)
-            if not call_id or self.is_answered(call_id) or not self.should_handle_tool_use(call_id):
-                continue
-            if call_id in self.pending_ask or call_id in self.pending_results:
-                continue
-            return True
-        return False
-
     def handle_tool_use(self, event: Event, custom: bool) -> None:
         call_id = tool_use_call_id(event)
-        if not call_id or self.is_answered(call_id):
+        if not call_id or self.is_answered(call_id) or call_id in self.scheduled:
             return
         pending = self.pending_results.get(call_id)
         if pending is not None:
@@ -424,8 +452,97 @@ class _RunnerState:
                 self.pending_results[call_id] = decision.result
                 self.send_result(call_id, event, custom, "", decision.result)
                 return
-        result = self.execute_tool(event, custom)
-        self.post_result(event, custom, call_id, result, confirmation)
+        self.scheduled.add(call_id)
+        self.execution_queue.append(_PendingToolEvent(event, custom, confirmation))
+        self.start_next_tool_execution()
+
+    def start_next_tool_execution(self) -> None:
+        if self.active_execution is not None:
+            return
+        while self.execution_queue:
+            pending = self.execution_queue.popleft()
+            call_id = tool_use_call_id(pending.event)
+            if self.is_answered(call_id):
+                self.scheduled.discard(call_id)
+                continue
+            cancel_event = _ToolCancelEvent(self.runner.options.tool_context.cancel_event)
+            self.active_execution = _ActiveToolExecution(pending, cancel_event)
+
+            def execute(item: _PendingToolEvent = pending, cancel: _ToolCancelEvent = cancel_event) -> None:
+                result = self.execute_tool(item.event, item.custom, cancel)
+                self.execution_done.put(_ToolExecutionResult(item, result))
+
+            threading.Thread(target=execute, name="ma-self-host-tool-dispatch", daemon=True).start()
+            return
+
+    def drain_execution_done(self) -> None:
+        while True:
+            try:
+                completed = self.execution_done.get_nowait()
+            except queue.Empty:
+                return
+            self.finish_tool_execution(completed)
+
+    def finish_tool_execution(self, completed: _ToolExecutionResult) -> None:
+        call_id = tool_use_call_id(completed.pending.event)
+        active = self.active_execution
+        if active is not None and tool_use_call_id(active.pending.event) == call_id:
+            active.cancel_event.set()
+            self.active_execution = None
+        self.scheduled.discard(call_id)
+        if not self.is_answered(call_id):
+            self.post_result(
+                completed.pending.event,
+                completed.pending.custom,
+                call_id,
+                completed.result,
+                completed.pending.confirmation,
+            )
+        self.start_next_tool_execution()
+
+    def cancel_active_execution(self) -> None:
+        if self.active_execution is not None:
+            self.active_execution.cancel_event.set()
+
+    def handle_interrupt(self, event: Event, eligible: Optional[Set[str]] = None) -> None:
+        thread_id = event.session_thread_id
+
+        def matches(call_id: str, tool_event: Event) -> bool:
+            if eligible is not None and call_id not in eligible:
+                return False
+            return not thread_id or tool_event.session_thread_id == thread_id
+
+        active = self.active_execution
+        if active is not None:
+            call_id = tool_use_call_id(active.pending.event)
+            if matches(call_id, active.pending.event):
+                active.cancel_event.set()
+                self.settle_interrupted_tool_use(call_id)
+        retained: Deque[_PendingToolEvent] = deque()
+        for pending in self.execution_queue:
+            call_id = tool_use_call_id(pending.event)
+            if matches(call_id, pending.event):
+                self.settle_interrupted_tool_use(call_id)
+            else:
+                retained.append(pending)
+        self.execution_queue = retained
+        for call_id, tool_event in list(self.tool_use_events.items()):
+            if not self.is_answered(call_id) and matches(call_id, tool_event):
+                self.settle_interrupted_tool_use(call_id)
+
+    def settle_interrupted_tool_use(self, call_id: str) -> None:
+        if not call_id or self.is_answered(call_id):
+            return
+        self.scheduled.discard(call_id)
+        self.mark_answered(call_id)
+        if self.runner.options.result_store is None:
+            return
+        try:
+            self.runner.options.result_store.discard(call_id)
+        except Exception as exc:  # noqa: BLE001 - interruption must not stop event consumption.
+            self.runner.options.logger.warning(
+                "discard interrupted tool result failed tool_use_id=%s err=%s", call_id, exc
+            )
 
     def owns_tool(self, event: Event, custom: bool) -> bool:
         if custom:
@@ -453,13 +570,15 @@ class _RunnerState:
         self.pending_ask[call_id] = event
         return "", False
 
-    def execute_tool(self, event: Event, custom: bool) -> ToolResult:
+    def execute_tool(
+        self, event: Event, custom: bool, execution_cancel: Optional[_ToolCancelEvent] = None
+    ) -> ToolResult:
         context = replace(self.runner.options.tool_context)
         if self.runner.options.tool_timeout_seconds is not None and self.runner.options.tool_timeout_seconds > 0:
             context.tool_timeout_seconds = self.runner.options.tool_timeout_seconds
         if context.tool_timeout_seconds <= 0:
             context.tool_timeout_seconds = DEFAULT_TOOL_TIMEOUT_SECONDS
-        cancel_event = _ToolCancelEvent(context.cancel_event)
+        cancel_event = execution_cancel or _ToolCancelEvent(context.cancel_event)
         context.cancel_event = cancel_event
         results: "queue.Queue[ToolResult]" = queue.Queue(maxsize=1)
 
@@ -579,6 +698,8 @@ class _RunnerState:
             call_id = tool_use_call_id(event)
             if call_id:
                 self.session_tool_uses.add(call_id)
+                if not self.is_answered(call_id):
+                    self.tool_use_events[call_id] = event
                 self.tool_uses_since_status.add(call_id)
             return
         if event.type == EVENT_TYPE_SESSION_STATUS_IDLE:
@@ -642,7 +763,7 @@ class _RunnerState:
             self.idle_armed_at = time.monotonic()
 
     def has_idle_blockers(self) -> bool:
-        return bool(self.pending_ask or self.pending_results or self.external_tools)
+        return bool(self.pending_ask or self.pending_results or self.external_tools or self.scheduled)
 
     def idle_expired(self) -> bool:
         max_idle = self.max_idle_seconds()

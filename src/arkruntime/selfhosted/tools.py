@@ -3,8 +3,10 @@
 
 from __future__ import annotations
 
+import base64
 import glob as globlib
 import json
+import mimetypes
 import os
 import re
 import signal
@@ -20,6 +22,9 @@ from typing import Any, Callable, Dict, Iterable, Mapping, Optional
 from .types import DEFAULT_TOOL_TIMEOUT_SECONDS, ContentBlock
 
 MAX_OUTPUT_BYTES = 100000
+DEFAULT_MAX_MEDIA_FILE_BYTES = 7 << 20
+DEFAULT_READ_LINES = 2000
+MAX_READ_LINE_CHARS = 2000
 MAX_SEARCH_MATCHES = 1000
 _SENSITIVE_ENV_PREFIXES = (
     "AIME_",
@@ -84,6 +89,9 @@ class ToolContext:
     unrestricted_paths: bool = False
     tool_timeout_seconds: float = DEFAULT_TOOL_TIMEOUT_SECONDS
     cancel_event: Any = None
+    max_input_file_bytes: int = MAX_OUTPUT_BYTES
+    # 0 follows max_input_file_bytes; a negative value disables the media limit.
+    max_media_file_bytes: int = DEFAULT_MAX_MEDIA_FILE_BYTES
 
 
 class FunctionTool(Tool):
@@ -168,13 +176,152 @@ class ReadFileTool(Tool):
 
     def execute(self, tool_input: Any, context: ToolContext) -> ToolResult:
         args = _as_mapping(tool_input)
-        path = _safe_path(context, str(args.get("path") or args.get("file") or ""))
-        limit = min(max(int(args.get("limit") or 20000), 0), MAX_OUTPUT_BYTES)
-        offset = int(args.get("offset") or 0)
-        with open(path, "r", encoding="utf-8", errors="replace") as f:
-            if offset > 0:
-                f.seek(offset)
-            return text_result(f.read(limit))
+        try:
+            path = _safe_path(context, _read_file_path(args))
+        except ValueError as exc:
+            return error_result(str(exc))
+        view_range = args.get("view_range")
+        if view_range in (None, []):
+            view_range = None
+        elif not isinstance(view_range, (list, tuple)) or len(view_range) != 2:
+            return error_result("view_range must be [start_line, end_line]")
+        try:
+            offset = _optional_integer(args, "offset")
+            limit = _optional_integer(args, "limit")
+            if view_range is not None:
+                start_line = _integer_value(view_range[0], "view_range")
+                end_line = _integer_value(view_range[1], "view_range")
+        except ValueError as exc:
+            return error_result(str(exc))
+        if view_range is not None and (offset is not None or limit is not None):
+            return error_result("view_range cannot be combined with offset or limit")
+        media = _detect_read_media(path)
+        if media is not None:
+            if view_range is not None or offset is not None or limit is not None:
+                return error_result("view_range, offset, and limit are only supported for text files")
+            size = os.path.getsize(path)
+            media_limit = context.max_media_file_bytes
+            if media_limit == 0:
+                media_limit = context.max_input_file_bytes
+            if media_limit > 0 and size > media_limit:
+                return error_result(f"media file too large: {size} bytes")
+            block_type, media_type = media
+            with open(path, "rb") as file:
+                raw = file.read(media_limit + 1) if media_limit > 0 else file.read()
+            if media_limit > 0 and len(raw) > media_limit:
+                return error_result(f"media file too large: {max(size, len(raw))} bytes")
+            data = base64.b64encode(raw).decode("ascii")
+            return ToolResult(
+                [ContentBlock(type=block_type, source={"type": "base64", "media_type": media_type, "data": data})]
+            )
+        text_limit = context.max_input_file_bytes if context.max_input_file_bytes > 0 else MAX_OUTPUT_BYTES
+        size = os.path.getsize(path)
+        if text_limit > 0 and size > text_limit:
+            return error_result(f"file too large: {size} bytes")
+        raw = Path(path).read_bytes()
+        try:
+            text = raw.decode("utf-8")
+        except UnicodeDecodeError:
+            return error_result("binary file cannot be read directly")
+        if view_range is not None:
+            lines = text.split("\n")
+            start = max(0, start_line - 1)
+            if start >= len(lines):
+                return text_result("")
+            end = len(lines)
+            if end_line > 0:
+                end = min(end, end_line)
+            if end < start:
+                return error_result(f"view_range end line {end_line} is before start line {start_line}")
+            return text_result("\n".join(lines[start:end]))
+        if offset is not None and offset < 1:
+            return error_result(f"offset is the 1-based start line and must be >= 1, got {offset}")
+        return text_result(_render_read_lines(text, offset, limit))
+
+
+def _read_file_path(args: Mapping[str, Any]) -> str:
+    path = ""
+    for name in ("file_path", "path", "file"):
+        value = args.get(name)
+        if value is not None and not isinstance(value, str):
+            raise ValueError(f"{name} must be a string")
+        candidate = value or ""
+        if not candidate:
+            continue
+        if path and path != candidate:
+            raise ValueError("file_path, path, and file must not conflict")
+        path = candidate
+    if not path:
+        raise ValueError("file_path is required")
+    return path
+
+
+def _integer_value(value: Any, name: str) -> int:
+    if isinstance(value, bool):
+        raise ValueError(f"{name} must be an integer")
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str) and re.fullmatch(r"[+-]?\d+", value):
+        return int(value)
+    raise ValueError(f"{name} must be an integer")
+
+
+def _optional_integer(args: Mapping[str, Any], name: str) -> Optional[int]:
+    if name not in args or args[name] is None:
+        return None
+    return _integer_value(args[name], name)
+
+
+def _render_read_lines(text: str, offset: Optional[int], limit: Optional[int]) -> str:
+    lines = text.split("\n")
+    if lines and lines[-1] == "" and text.endswith("\n"):
+        lines.pop()
+    start = (offset or 1) - 1
+    start = min(start, len(lines))
+    count = limit if limit is not None and limit > 0 else DEFAULT_READ_LINES
+    end = min(start + count, len(lines))
+    output = []
+    for index in range(start, end):
+        line = lines[index]
+        if len(line) > MAX_READ_LINE_CHARS:
+            line = f"{line[:MAX_READ_LINE_CHARS]} [line truncated]"
+        output.append(f"{index + 1:6d}\t{line}\n")
+    if end < len(lines):
+        output.append(f"\n[truncated: showing lines {start + 1}-{end} of {len(lines)}]\n")
+    return "".join(output)
+
+
+def _detect_read_media(path: str) -> Optional[tuple[str, str]]:
+    with open(path, "rb") as file:
+        header = file.read(512)
+    if header.startswith(b"\xff\xd8\xff"):
+        return "image", "image/jpeg"
+    if header.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image", "image/png"
+    if header.startswith((b"GIF87a", b"GIF89a")):
+        return "image", "image/gif"
+    if len(header) >= 12 and header[:4] == b"RIFF" and header[8:12] == b"WEBP":
+        return "image", "image/webp"
+    if header.startswith(b"%PDF-"):
+        return "document", "application/pdf"
+    if not _looks_binary(header):
+        return None
+    media_type = mimetypes.guess_type(path)[0] or ""
+    if media_type in ("image/jpeg", "image/png", "image/gif", "image/webp"):
+        return "image", media_type
+    if media_type == "application/pdf":
+        return "document", media_type
+    return None
+
+
+def _looks_binary(data: bytes) -> bool:
+    if b"\x00" in data:
+        return True
+    try:
+        data.decode("utf-8")
+    except UnicodeDecodeError:
+        return True
+    return False
 
 
 class WriteFileTool(Tool):
