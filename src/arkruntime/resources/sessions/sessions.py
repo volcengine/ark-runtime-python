@@ -8,10 +8,13 @@ from ..._managed_agents_serialize import dump_body
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._types import NOT_GIVEN, NotGiven
 from ...types.session.agent_identifier import AgentIdentifier
+from ...types.session.agent_with_upgrades import AgentWithUpgrades
 from ...types.session.checkpoint_restore_config import CheckpointRestoreConfig
 from ...types.session.delete_session_response import DeleteSessionResponse
+from ...types.session.environment_with_upgrades import EnvironmentWithUpgrades
 from ...types.session.list_sessions_order import ListSessionsOrder
 from ...types.session.list_sessions_response import ListSessionsResponse
+from ...types.session.managed_agents_event_params import ManagedAgentsEventParams
 from ...types.session.session import Session
 from ...types.session.session_resource import SessionResource
 from ...types.session.session_status import SessionStatus
@@ -192,6 +195,48 @@ class Sessions(SyncAPIResource):
             cast_to=Session,
         )
 
+    def upgrade(
+        self,
+        session_id: str,
+        *,
+        agent: Optional[AgentWithUpgrades] | NotGiven = NOT_GIVEN,
+        environment: Optional[EnvironmentWithUpgrades] | NotGiven = NOT_GIVEN,
+        vault_ids: Optional[List[str]] | NotGiven = NOT_GIVEN,
+        initial_events: Optional[List[ManagedAgentsEventParams]] | NotGiven = NOT_GIVEN,
+        extra_headers=None,
+        extra_query=None,
+        extra_body=None,
+        timeout=None,
+    ) -> Session:
+        """Upgrade an existing Session's runtime configuration.
+
+        At least one of ``agent``, ``environment``, or ``vault_ids`` must be
+        provided. Agent and environment IDs must match the current Session.
+        Agent array fields use whole-list replacement semantics: an explicit
+        ``[]`` clears the list, while an omitted field keeps its current value.
+        ``vault_ids`` may only refresh the currently bound set; it cannot
+        change that set. An omitted or zero agent version keeps the current
+        snapshot rather than selecting the latest version. Self-hosted
+        environments reject runtime config overrides other than ``config.type``.
+        """
+        if not session_id:
+            raise ValueError("session_id is required")
+        return self._post(
+            f"{_PREFIX}/{session_id}/upgrades",
+            body=dump_body(
+                {
+                    "agent": agent,
+                    "environment": environment,
+                    "vault_ids": vault_ids,
+                    "initial_events": initial_events,
+                }
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=Session,
+        )
+
     def delete(
         self, session_id: str, *, extra_headers=None, extra_query=None, extra_body=None, timeout=None
     ) -> DeleteSessionResponse:
@@ -327,6 +372,48 @@ class AsyncSessions(AsyncAPIResource):
         return await self._post(
             f"{_PREFIX}/{session_id}",
             body=dump_body({"tags": tags, "title": title}),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=Session,
+        )
+
+    async def upgrade(
+        self,
+        session_id: str,
+        *,
+        agent: Optional[AgentWithUpgrades] | NotGiven = NOT_GIVEN,
+        environment: Optional[EnvironmentWithUpgrades] | NotGiven = NOT_GIVEN,
+        vault_ids: Optional[List[str]] | NotGiven = NOT_GIVEN,
+        initial_events: Optional[List[ManagedAgentsEventParams]] | NotGiven = NOT_GIVEN,
+        extra_headers=None,
+        extra_query=None,
+        extra_body=None,
+        timeout=None,
+    ) -> Session:
+        """Upgrade an existing Session's runtime configuration.
+
+        At least one of ``agent``, ``environment``, or ``vault_ids`` must be
+        provided. Agent and environment IDs must match the current Session.
+        Agent array fields use whole-list replacement semantics: an explicit
+        ``[]`` clears the list, while an omitted field keeps its current value.
+        ``vault_ids`` may only refresh the currently bound set; it cannot
+        change that set. An omitted or zero agent version keeps the current
+        snapshot rather than selecting the latest version. Self-hosted
+        environments reject runtime config overrides other than ``config.type``.
+        """
+        if not session_id:
+            raise ValueError("session_id is required")
+        return await self._post(
+            f"{_PREFIX}/{session_id}/upgrades",
+            body=dump_body(
+                {
+                    "agent": agent,
+                    "environment": environment,
+                    "vault_ids": vault_ids,
+                    "initial_events": initial_events,
+                }
+            ),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
