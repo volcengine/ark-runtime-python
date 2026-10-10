@@ -11,6 +11,7 @@ from typing import List, Optional
 from arkruntime._models import BaseModel
 
 from .agent_identifier import AgentIdentifier
+from .checkpoint_restore_config import CheckpointRestoreConfig
 from .environment_with_overrides import EnvironmentWithOverrides
 from .session_resource import SessionResource
 from .tag import Tag
@@ -25,13 +26,21 @@ class CreateSessionRequest(BaseModel):
     - AgentRef 对象：`{"type":"agent","id":"agent_...","version":1}`
     """
 
-    agent: AgentIdentifier
+    agent: Optional[AgentIdentifier] = None
     """
-    Agent 标识。
+    Agent 标识。普通创建必填；携带 `checkpoint_id` 恢复时可省略。
+
+    注意两种恢复基线的区别：
+    - **省略 `agent`**：完整继承 Checkpoint 冻结的 Agent 快照（含其
+    system / tools / model 接入配置等全部字段）；
+    - **显式提供 `agent`**：不是在 Checkpoint 快照上做局部修改，而是按
+    Agent 引用重新解析（指定 `version` 取该版本，省略取当前最新版；
+    源 Agent 在 Checkpoint 冻结后更新过就会拿到新配置），再在该基线
+    上应用 `agent_with_overrides` 覆写。
     """
     environment_id: Optional[str] = None
     """
-    关联的 Environment ID。与 `environment` 二选一。
+    关联的 Environment ID。与 `environment` 二选一；恢复时省略则继承快照。
     """
     environment: Optional[EnvironmentWithOverrides] = None
     """
@@ -43,7 +52,8 @@ class CreateSessionRequest(BaseModel):
     """
     resources: Optional[List[SessionResource]] = None
     """
-    挂载资源列表。
+    挂载资源列表。普通创建可指定；基于 Checkpoint 恢复时**必须省略**
+    （同账号 / 跨账号都完整继承 Checkpoint 资源，显式传空数组也返回 400）。
     """
     title: Optional[str] = None
     """
@@ -51,5 +61,19 @@ class CreateSessionRequest(BaseModel):
     """
     vault_ids: Optional[List[str]] = None
     """
-    会话可访问的 Vault ID 列表。
+    会话可访问的 Vault ID 列表。基于 Checkpoint 同账号恢复时必须省略并
+    继承快照；跨账号恢复允许显式提供完整替换列表（空数组同样属于覆盖）。
+    """
+    checkpoint_id: Optional[str] = None
+    """
+    Session Checkpoint ID。省略时为普通创建；传入时以 ready 状态
+    Checkpoint 的冻结配置为默认值创建新 Session，未显式提供的字段均从
+    快照继承。Checkpoint 不存在 / 非 ready 返回对应 4xx。
+    """
+    checkpoint_restore_config: Optional[CheckpointRestoreConfig] = None
+    """
+    跨账号 customer TOS 恢复配置。**不是所有跨账号恢复都需要**：仅当跨
+    账号恢复且 Checkpoint 含 customer TOS 数据时必填；同账号恢复、以及
+    跨账号但不含 customer TOS 时必须省略，否则返回 400。三分支细则见
+    `CheckpointRestoreConfig`。
     """

@@ -12,9 +12,17 @@ from .agent_with_upgrades import AgentWithUpgrades
 from .base64_document_source import Base64DocumentSource
 from .base64_image_source import Base64ImageSource
 from .cache_creation import CacheCreation
+from .checkpoint_component import CheckpointComponent
+from .checkpoint_component_status import CheckpointComponentStatus
+from .checkpoint_restore_config import CheckpointRestoreConfig
+from .checkpoint_session_snapshot import CheckpointSessionSnapshot
+from .checkpoint_status import CheckpointStatus
+from .create_session_checkpoint_request import CreateSessionCheckpointRequest
+from .create_session_checkpoint_response import CreateSessionCheckpointResponse
 from .create_session_request import CreateSessionRequest
 from .create_session_resource_request import CreateSessionResourceRequest
 from .create_session_upgrade_request import CreateSessionUpgradeRequest
+from .delete_session_checkpoint_response import DeleteSessionCheckpointResponse
 from .delete_session_response import DeleteSessionResponse
 from .document_source import DocumentSource
 from .environment_config_override import EnvironmentConfigOverride
@@ -25,7 +33,9 @@ from .environment_with_overrides import EnvironmentWithOverrides
 from .environment_with_upgrades import EnvironmentWithUpgrades
 from .file_document_source import FileDocumentSource
 from .file_image_source import FileImageSource
+from .get_session_checkpoint_response import GetSessionCheckpointResponse
 from .image_source import ImageSource
+from .list_session_checkpoints_response import ListSessionCheckpointsResponse
 from .list_session_events_response_wire import ListSessionEventsResponseWire
 from .list_session_resources_response import ListSessionResourcesResponse
 from .list_session_threads_response import ListSessionThreadsResponse
@@ -76,12 +86,14 @@ from .managed_agents_user_tool_result_event_params import (
 )
 from .model_overrides import ModelOverrides
 from .model_upgrades import ModelUpgrades
+from .override_token_limits import OverrideTokenLimits
 from .plain_text_document_source import PlainTextDocumentSource
 from .search_result_citations import SearchResultCitations
 from .search_result_content import SearchResultContent
 from .send_session_events_request import SendSessionEventsRequest
 from .send_session_events_response import SendSessionEventsResponse
 from .session import Session
+from .session_checkpoint import SessionCheckpoint
 from .session_resource import SessionResource
 from .session_resource_access import SessionResourceAccess
 from .session_resource_type import SessionResourceType
@@ -102,9 +114,17 @@ __all__ = [
     "Base64DocumentSource",
     "Base64ImageSource",
     "CacheCreation",
+    "CheckpointComponent",
+    "CheckpointComponentStatus",
+    "CheckpointRestoreConfig",
+    "CheckpointSessionSnapshot",
+    "CheckpointStatus",
+    "CreateSessionCheckpointRequest",
+    "CreateSessionCheckpointResponse",
     "CreateSessionRequest",
     "CreateSessionResourceRequest",
     "CreateSessionUpgradeRequest",
+    "DeleteSessionCheckpointResponse",
     "DeleteSessionResponse",
     "DocumentSource",
     "EnvironmentConfigOverride",
@@ -115,7 +135,9 @@ __all__ = [
     "EnvironmentWithUpgrades",
     "FileDocumentSource",
     "FileImageSource",
+    "GetSessionCheckpointResponse",
     "ImageSource",
+    "ListSessionCheckpointsResponse",
     "ListSessionEventsResponseWire",
     "ListSessionResourcesResponse",
     "ListSessionThreadsResponse",
@@ -150,12 +172,14 @@ __all__ = [
     "ManagedAgentsUserToolResultEventParams",
     "ModelOverrides",
     "ModelUpgrades",
+    "OverrideTokenLimits",
     "PlainTextDocumentSource",
     "SearchResultCitations",
     "SearchResultContent",
     "SendSessionEventsRequest",
     "SendSessionEventsResponse",
     "Session",
+    "SessionCheckpoint",
     "SessionResource",
     "SessionResourceAccess",
     "SessionResourceType",
