@@ -17,6 +17,7 @@ from uuid import uuid4
 import httpx
 
 from .._exceptions import ArkAPIError
+from ..types.environment import WorkStopReason
 from .envinit import Initializer, InitializerOptions
 from .session_tool_runner import SessionToolRunner, SessionToolRunnerOptions
 from .tool_result_store import FileToolResultStore
@@ -121,7 +122,7 @@ class WorkPoller:
             except _POLLER_TRANSIENT_ERRORS as exc:
                 self.options.logger.warning("ack work failed work_id=%s err=%s", item.id, exc)
                 if _is_poller_fatal_4xx(exc):
-                    self._stop_item(item, force=True)
+                    self._stop_item(item, force=True, reason=WorkStopReason.others)
                     continue
                 self._backoff_discard()
                 continue
@@ -150,12 +151,21 @@ class WorkPoller:
         except Exception as exc:  # noqa: BLE001 - invalid work still obeys ACK ownership.
             self.options.logger.warning("ack invalid work failed work_id=%s err=%s", item.id, exc)
             return
-        self._stop_item(item, force=True)
+        self._stop_item(item, force=True, reason=WorkStopReason.others)
         self._backoff_discard()
 
-    def _stop_item(self, item: WorkItem, *, force: bool) -> None:
+    def _stop_item(
+        self,
+        item: WorkItem,
+        *,
+        force: bool,
+        reason: Optional[WorkStopReason] = None,
+    ) -> None:
         try:
-            self.api.stop_work(item.environment_id, item.id, force=force)
+            if reason is None:
+                self.api.stop_work(item.environment_id, item.id, force=force)
+            else:
+                self.api.stop_work(item.environment_id, item.id, force=force, reason=reason)
         except Exception as exc:  # noqa: BLE001
             if not _is_resolved_status(exc):
                 self.options.logger.warning("stop work failed work_id=%s err=%s", item.id, exc)
@@ -262,6 +272,7 @@ class EnvironmentWorker:
         heartbeat_cause = {"value": ""}
         heartbeat = None
         initializer = None
+        stop_reason = WorkStopReason.completed
         try:
             workdir = self._workdir()
             heartbeat_thread = threading.Thread(
@@ -303,6 +314,12 @@ class EnvironmentWorker:
                 ),
             )
             runner.run()
+        except (IdleTimeout, SessionTerminated):
+            raise
+        except BaseException:
+            # 进程级退出也需要触发恢复，不能被误记为正常完成。
+            stop_reason = WorkStopReason.worker_abnormal
+            raise
         finally:
             if initializer is not None:
                 try:
@@ -314,8 +331,15 @@ class EnvironmentWorker:
                 heartbeat_done.wait(timeout=DEFAULT_HEARTBEAT_SECONDS + 1)
             cause = heartbeat_cause["value"]
             if _should_stop_item(cause):
+                reason = None if cause == "stop_requested" else stop_reason
+                # 外围关闭且 heartbeat 未给出其他原因时，需要由平台重新排队。
+                if cause == "" and self._stop.is_set():
+                    reason = WorkStopReason.worker_abnormal
                 try:
-                    self.api.stop_work(work.environment_id, work.id, force=True)
+                    if reason is None:
+                        self.api.stop_work(work.environment_id, work.id, force=True)
+                    else:
+                        self.api.stop_work(work.environment_id, work.id, force=True, reason=reason)
                 except Exception as exc:  # noqa: BLE001
                     if not _is_resolved_status(exc):
                         self.options.logger.warning("stop work failed: %s", exc)

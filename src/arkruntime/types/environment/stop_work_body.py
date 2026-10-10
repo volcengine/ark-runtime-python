@@ -10,6 +10,8 @@ from typing import Optional
 
 from arkruntime._models import BaseModel
 
+from .work_stop_reason import WorkStopReason
+
 
 class StopWorkBody(BaseModel):
     """
@@ -19,4 +21,12 @@ class StopWorkBody(BaseModel):
     force: Optional[bool] = None
     """
     是否强制停止。
+    """
+    reason: Optional[WorkStopReason] = None
+    """
+    强制停止原因；仅允许与 `force=true` 一起提交，省略时按 `others` 记录。
+    Worker 正常完成时传 `completed`，异常退出时传 `worker_abnormal`；用户或管理员操作分别传
+    `user_cancelled` 或 `admin_stopped`，无法归类时传 `others`。`lease_expired` 仅由平台在租约
+    过期时写入，不应通过 StopWork 上报。该字段用于停止诊断，并在 Worker 上报 `completed`
+    且全部 tool_use 已闭合时作为清零恢复次数的信号；平台不会按停止原因排除积极恢复。
     """

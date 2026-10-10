@@ -18,6 +18,7 @@ import httpx
 from arkruntime import Ark
 from arkruntime._constants import CLIENT_REQUEST_HEADER, SERVER_REQUEST_HEADER
 from arkruntime._types import NOT_GIVEN
+from arkruntime.types.environment import WorkStopReason
 
 from .types import (
     EXPECTED_LAST_HEARTBEAT_NO_HEARTBEAT,
@@ -106,7 +107,14 @@ class ClientAPI:
         )
         return response
 
-    def stop_work(self, environment_id: str, work_id: str, *, force: bool = False) -> None:
+    def stop_work(
+        self,
+        environment_id: str,
+        work_id: str,
+        *,
+        force: bool = False,
+        reason: Optional[WorkStopReason] = None,
+    ) -> None:
         if not environment_id:
             raise ValueError("environment_id is required")
         if not work_id:
@@ -115,6 +123,7 @@ class ClientAPI:
             environment_id,
             work_id,
             force=force,
+            reason=reason,
             timeout=10.0,
         )
 

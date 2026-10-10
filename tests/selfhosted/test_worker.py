@@ -15,6 +15,7 @@ from arkruntime.selfhosted import (
     HandleItemOptions,
     HeartbeatResponse,
     Session,
+    SessionTerminated,
     WorkItem,
     WorkPoller,
     WorkPollerOptions,
@@ -22,6 +23,7 @@ from arkruntime.selfhosted import (
 from arkruntime.selfhosted.tools import ToolContext
 from arkruntime.selfhosted.types import WorkData, is_fatal_4xx
 from arkruntime.selfhosted.worker import default_worker_id
+from arkruntime.types.environment import WorkStopReason
 
 
 def _work_item(environment_id: str) -> WorkItem:
@@ -74,7 +76,9 @@ def test_fatal_ack_error_force_stops_work_and_continues() -> None:
 
     assert poller.next() is None
     assert poller.error is None
-    assert api.stops == [("env-1", "work-1", {"force": True})]
+    assert api.stops == [
+        ("env-1", "work-1", {"force": True, "reason": WorkStopReason.others})
+    ]
 
 
 def test_poller_does_not_swallow_programming_errors() -> None:
@@ -132,6 +136,71 @@ def test_heartbeat_stop_cancels_session_runner(tmp_path) -> None:
 
     assert time.monotonic() - started < 1
     assert api.stops == [("env-1", "work-1", {"force": True})]
+
+
+class _ActiveHeartbeatAPI(_StoppingHeartbeatAPI):
+    def heartbeat_work(self, environment_id, work_id, **kwargs):
+        return HeartbeatResponse(
+            last_heartbeat="2026-08-24T10:00:00Z",
+            state="active",
+            lease_extended=True,
+            ttl_seconds=30,
+            type="work_heartbeat",
+        )
+
+
+class _FailingWorkerAPI(_ActiveHeartbeatAPI):
+    def get_session(self, session_id):
+        raise ValueError("worker failed")
+
+
+def test_worker_failure_stops_work_as_abnormal(tmp_path) -> None:
+    api = _FailingWorkerAPI()
+    worker = EnvironmentWorker(
+        api,
+        EnvironmentWorkerOptions(environment_id="env-1", workdir=str(tmp_path)),
+    )
+
+    with pytest.raises(ValueError, match="worker failed"):
+        worker.handle_item(HandleItemOptions(work_id="work-1", environment_id="env-1", session_id="session-1"))
+
+    assert api.stops == [
+        ("env-1", "work-1", {"force": True, "reason": WorkStopReason.worker_abnormal})
+    ]
+
+
+class _TerminatedWorkerAPI(_FailingWorkerAPI):
+    def get_session(self, session_id):
+        raise SessionTerminated("session terminated")
+
+
+def test_session_termination_stops_work_as_completed(tmp_path) -> None:
+    api = _TerminatedWorkerAPI()
+    worker = EnvironmentWorker(
+        api,
+        EnvironmentWorkerOptions(environment_id="env-1", workdir=str(tmp_path)),
+    )
+
+    worker.handle_item(HandleItemOptions(work_id="work-1", environment_id="env-1", session_id="session-1"))
+
+    assert api.stops == [
+        ("env-1", "work-1", {"force": True, "reason": WorkStopReason.completed})
+    ]
+
+
+def test_worker_close_stops_work_as_abnormal(tmp_path) -> None:
+    api = _ActiveHeartbeatAPI()
+    worker = EnvironmentWorker(
+        api,
+        EnvironmentWorkerOptions(environment_id="env-1", workdir=str(tmp_path)),
+    )
+    worker.close()
+
+    worker.handle_item(HandleItemOptions(work_id="work-1", environment_id="env-1", session_id="session-1"))
+
+    assert api.stops == [
+        ("env-1", "work-1", {"force": True, "reason": WorkStopReason.worker_abnormal})
+    ]
 
 
 class _LeaseLostHeartbeatAPI(_StoppingHeartbeatAPI):

@@ -13,6 +13,7 @@ from arkruntime._models import BaseModel
 from .volc_tag import VolcTag
 from .work_data import WorkData
 from .work_state import WorkState
+from .work_stop_reason import WorkStopReason
 
 
 class WorkItem(BaseModel):
@@ -67,6 +68,17 @@ class WorkItem(BaseModel):
     stopped_at: Optional[str] = None
     """
     Work 停止时间，RFC 3339。
+    """
+    stop_reason: Optional[WorkStopReason] = None
+    """
+    最近一次停止原因。首次停止前省略；state 为 stopping / stopped 时返回本次停止原因；
+    自动恢复到 queued / starting / active 后仍保留上一次停止原因，当前生命周期状态以
+    `state` 为准。
+    """
+    recovery_count: Optional[int] = None
+    """
+    自上次成功完成且全部 tool_use 已闭合后，平台已自动将本 Work 重新排队的次数；
+    首次执行或字段省略时按 0 处理。手动 Ensure 不会清零该计数。
     """
     type: Literal["work"]
     """

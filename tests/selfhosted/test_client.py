@@ -3,13 +3,17 @@
 
 from __future__ import annotations
 
+import asyncio
+import json
 import math
 
 import httpx
+import pytest
 
-from arkruntime import Ark
+from arkruntime import Ark, AsyncArk
 from arkruntime.selfhosted import APIError, ClientAPI, SkillRef
 from arkruntime.selfhosted.types import work_session_id
+from arkruntime.types.environment import WorkStopReason
 
 
 def _test_credential() -> str:
@@ -57,6 +61,8 @@ def test_poll_work_preserves_nested_session_data() -> None:
         },
         "environment_id": "env-20260813132936-wq8d4",
         "state": "queued",
+        "stop_reason": "worker_abnormal",
+        "recovery_count": 5,
         "type": "work",
     }
 
@@ -74,6 +80,8 @@ def test_poll_work_preserves_nested_session_data() -> None:
     assert item.id == work["id"]
     assert item.data.id == work["data"]["id"]
     assert item.data.type == "session"
+    assert item.stop_reason == WorkStopReason.worker_abnormal
+    assert item.recovery_count == 5
     assert work_session_id(item) == work["data"]["id"]
 
 
@@ -151,6 +159,7 @@ def test_atomic_environment_work_api_matches_openapi_contract() -> None:
         "type": "work_heartbeat",
     }
     calls = []
+    stop_bodies = []
 
     def handle(request: httpx.Request) -> httpx.Response:
         calls.append(request)
@@ -171,7 +180,7 @@ def test_atomic_environment_work_api_matches_openapi_contract() -> None:
             return httpx.Response(httpx.codes.OK, json=heartbeat)
         assert request.url.path.endswith("/stop")
         assert request.method == "POST"
-        assert request.content == b"{}"
+        stop_bodies.append(request.content)
         return httpx.Response(httpx.codes.OK, json=work)
 
     client = _ark_client(httpx.MockTransport(handle))
@@ -197,6 +206,21 @@ def test_atomic_environment_work_api_matches_openapi_contract() -> None:
             is True
         )
         assert resource.stop("env-1", "work-1").id == "work-1"
+        assert (
+            resource.stop(
+                "env-1",
+                "work-1",
+                force=True,
+                reason=WorkStopReason.worker_abnormal,
+            ).id
+            == "work-1"
+        )
+        ClientAPI(client).stop_work(
+            "env-1",
+            "work-1",
+            force=True,
+            reason=WorkStopReason.worker_abnormal,
+        )
     finally:
         client.close()
 
@@ -205,7 +229,57 @@ def test_atomic_environment_work_api_matches_openapi_contract() -> None:
         "/api/v3/environments/env-1/work/work-1/ack",
         "/api/v3/environments/env-1/work/work-1/heartbeat",
         "/api/v3/environments/env-1/work/work-1/stop",
+        "/api/v3/environments/env-1/work/work-1/stop",
+        "/api/v3/environments/env-1/work/work-1/stop",
     ]
+    assert [json.loads(body) for body in stop_bodies] == [
+        {},
+        {"force": True, "reason": "worker_abnormal"},
+        {"force": True, "reason": "worker_abnormal"},
+    ]
+
+
+def test_stop_reason_requires_force_without_sending_request() -> None:
+    calls = 0
+
+    def handle(_: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        raise AssertionError("invalid stop request must not be sent")
+
+    client = _ark_client(httpx.MockTransport(handle))
+    try:
+        with pytest.raises(ValueError, match="reason requires force=True"):
+            client.environments.work.stop(
+                "env-1",
+                "work-1",
+                reason=WorkStopReason.worker_abnormal,
+            )
+        with pytest.raises(ValueError, match="reason requires force=True"):
+            ClientAPI(client).stop_work(
+                "env-1",
+                "work-1",
+                reason=WorkStopReason.worker_abnormal,
+            )
+    finally:
+        client.close()
+
+    async def check_async_stop() -> None:
+        async with AsyncArk(
+            api_key=_test_credential(),
+            base_url="https://ark.example.com/api/v3",
+            http_client=httpx.AsyncClient(transport=httpx.MockTransport(handle)),
+            max_retries=0,
+        ) as async_client:
+            with pytest.raises(ValueError, match="reason requires force=True"):
+                await async_client.environments.work.stop(
+                    "env-1",
+                    "work-1",
+                    reason=WorkStopReason.worker_abnormal,
+                )
+
+    asyncio.run(check_async_stop())
+    assert calls == 0
 
 
 def test_list_events_decodes_wire_data_into_tool_use_events() -> None:
