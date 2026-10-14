@@ -332,7 +332,7 @@ class EnvironmentWorker:
             cause = heartbeat_cause["value"]
             if _should_stop_item(cause):
                 reason = None if cause == "stop_requested" else stop_reason
-                # 外围关闭且 heartbeat 未给出其他原因时，需要由平台重新排队。
+                # 外围关闭且 heartbeat 未给出其他原因时，记录 worker 异常退出。
                 if cause == "" and self._stop.is_set():
                     reason = WorkStopReason.worker_abnormal
                 try:
@@ -360,6 +360,7 @@ class EnvironmentWorker:
                     resp = self.api.heartbeat_work(
                         work.environment_id,
                         work.id,
+                        worker_id=self.options.worker_id,
                         expected_last_heartbeat=last,
                         desired_ttl_seconds=int(ttl),
                     )

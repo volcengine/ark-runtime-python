@@ -102,6 +102,7 @@ class EnvironmentWork(SyncAPIResource):
         environment_id: str,
         work_id: str,
         *,
+        worker_id: str = "",
         expected_last_heartbeat: str = "",
         desired_ttl_seconds: int = 0,
         extra_headers=None,
@@ -118,7 +119,7 @@ class EnvironmentWork(SyncAPIResource):
             _path(environment_id, f"{quote(work_id, safe='')}/heartbeat"),
             options=make_request_options(
                 query=query,
-                extra_headers=extra_headers,
+                extra_headers=_worker_headers(worker_id, extra_headers),
                 timeout=timeout,
             ),
             cast_to=HeartbeatWorkResponse,
@@ -200,6 +201,7 @@ class AsyncEnvironmentWork(AsyncAPIResource):
         environment_id: str,
         work_id: str,
         *,
+        worker_id: str = "",
         expected_last_heartbeat: str = "",
         desired_ttl_seconds: int = 0,
         extra_headers=None,
@@ -216,7 +218,7 @@ class AsyncEnvironmentWork(AsyncAPIResource):
             _path(environment_id, f"{quote(work_id, safe='')}/heartbeat"),
             options=make_request_options(
                 query=query,
-                extra_headers=extra_headers,
+                extra_headers=_worker_headers(worker_id, extra_headers),
                 timeout=timeout,
             ),
             cast_to=HeartbeatWorkResponse,

@@ -41,13 +41,6 @@ class EnvConfig(BaseModel):
     """
     沙箱启动阶段执行的初始化脚本。
     """
-    active_recovery: Optional[bool] = None
-    """
-    是否启用 Work 积极恢复；仅 self_hosted Environment 支持，省略时等同于 false。该配置
-    仅允许在 Environment 级设置，不允许通过 Session override/upgrade 覆盖。开启后，平台在
-    Work 已 stopped、仍有未闭合 agent.tool_use 且 recovery_count 少于 5 次时将 Work 重新排队，
-    不按 stop_reason 排除。只有 Worker 上报 completed 且全部 tool_use 已闭合后才会清零计数。
-    """
     tos: Optional[TosConfig] = None
     """
     Environment outputs 的 TOS 存储配置。
