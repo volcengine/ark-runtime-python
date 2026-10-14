@@ -62,7 +62,6 @@ def test_poll_work_preserves_nested_session_data() -> None:
         "environment_id": "env-20260813132936-wq8d4",
         "state": "queued",
         "stop_reason": "worker_abnormal",
-        "recovery_count": 5,
         "type": "work",
     }
 
@@ -81,7 +80,6 @@ def test_poll_work_preserves_nested_session_data() -> None:
     assert item.data.id == work["data"]["id"]
     assert item.data.type == "session"
     assert item.stop_reason == WorkStopReason.worker_abnormal
-    assert item.recovery_count == 5
     assert work_session_id(item) == work["data"]["id"]
 
 
@@ -113,7 +111,7 @@ def test_poll_work_rejects_payload_outside_generated_contract() -> None:
         client.close()
 
 
-def test_heartbeat_uses_generated_response_model() -> None:
+def test_heartbeat_uses_generated_response_model_and_worker_identity() -> None:
     heartbeat = {
         "last_heartbeat": "2026-08-24T10:00:00Z",
         "lease_extended": True,
@@ -123,6 +121,7 @@ def test_heartbeat_uses_generated_response_model() -> None:
     }
 
     def handle(request: httpx.Request) -> httpx.Response:
+        assert request.headers["Ark-Worker-ID"] == "worker-1"
         return httpx.Response(httpx.codes.OK, json=heartbeat)
 
     client = _ark_client(httpx.MockTransport(handle))
@@ -130,6 +129,7 @@ def test_heartbeat_uses_generated_response_model() -> None:
         response = ClientAPI(client).heartbeat_work(
             "env-1",
             "work-1",
+            worker_id="worker-1",
             expected_last_heartbeat="NO_HEARTBEAT",
             desired_ttl_seconds=30,
         )

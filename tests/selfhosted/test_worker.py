@@ -76,9 +76,7 @@ def test_fatal_ack_error_force_stops_work_and_continues() -> None:
 
     assert poller.next() is None
     assert poller.error is None
-    assert api.stops == [
-        ("env-1", "work-1", {"force": True, "reason": WorkStopReason.others})
-    ]
+    assert api.stops == [("env-1", "work-1", {"force": True, "reason": WorkStopReason.others})]
 
 
 def test_poller_does_not_swallow_programming_errors() -> None:
@@ -104,8 +102,10 @@ def test_default_worker_id_is_unique_per_worker() -> None:
 class _StoppingHeartbeatAPI:
     def __init__(self) -> None:
         self.stops = []
+        self.heartbeat_worker_ids = []
 
     def heartbeat_work(self, environment_id, work_id, **kwargs):
+        self.heartbeat_worker_ids.append(kwargs.get("worker_id"))
         return HeartbeatResponse(
             last_heartbeat="2026-08-24T10:00:00Z",
             state="stopping",
@@ -136,6 +136,7 @@ def test_heartbeat_stop_cancels_session_runner(tmp_path) -> None:
 
     assert time.monotonic() - started < 1
     assert api.stops == [("env-1", "work-1", {"force": True})]
+    assert api.heartbeat_worker_ids == [worker.options.worker_id]
 
 
 class _ActiveHeartbeatAPI(_StoppingHeartbeatAPI):
@@ -164,9 +165,7 @@ def test_worker_failure_stops_work_as_abnormal(tmp_path) -> None:
     with pytest.raises(ValueError, match="worker failed"):
         worker.handle_item(HandleItemOptions(work_id="work-1", environment_id="env-1", session_id="session-1"))
 
-    assert api.stops == [
-        ("env-1", "work-1", {"force": True, "reason": WorkStopReason.worker_abnormal})
-    ]
+    assert api.stops == [("env-1", "work-1", {"force": True, "reason": WorkStopReason.worker_abnormal})]
 
 
 class _TerminatedWorkerAPI(_FailingWorkerAPI):
@@ -183,9 +182,7 @@ def test_session_termination_stops_work_as_completed(tmp_path) -> None:
 
     worker.handle_item(HandleItemOptions(work_id="work-1", environment_id="env-1", session_id="session-1"))
 
-    assert api.stops == [
-        ("env-1", "work-1", {"force": True, "reason": WorkStopReason.completed})
-    ]
+    assert api.stops == [("env-1", "work-1", {"force": True, "reason": WorkStopReason.completed})]
 
 
 def test_worker_close_stops_work_as_abnormal(tmp_path) -> None:
@@ -198,9 +195,7 @@ def test_worker_close_stops_work_as_abnormal(tmp_path) -> None:
 
     worker.handle_item(HandleItemOptions(work_id="work-1", environment_id="env-1", session_id="session-1"))
 
-    assert api.stops == [
-        ("env-1", "work-1", {"force": True, "reason": WorkStopReason.worker_abnormal})
-    ]
+    assert api.stops == [("env-1", "work-1", {"force": True, "reason": WorkStopReason.worker_abnormal})]
 
 
 class _LeaseLostHeartbeatAPI(_StoppingHeartbeatAPI):

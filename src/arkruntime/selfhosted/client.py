@@ -91,6 +91,7 @@ class ClientAPI:
         environment_id: str,
         work_id: str,
         *,
+        worker_id: str = "",
         expected_last_heartbeat: str,
         desired_ttl_seconds: int = 30,
     ) -> HeartbeatResponse:
@@ -101,6 +102,7 @@ class ClientAPI:
         response = self.client.environments.work.heartbeat(
             environment_id,
             work_id,
+            worker_id=worker_id,
             expected_last_heartbeat=(expected_last_heartbeat or EXPECTED_LAST_HEARTBEAT_NO_HEARTBEAT),
             desired_ttl_seconds=desired_ttl_seconds,
             timeout=max(1.0, min(float(desired_ttl_seconds or 30) / 2, 30.0)),
