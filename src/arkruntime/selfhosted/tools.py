@@ -177,7 +177,7 @@ class ReadFileTool(Tool):
     def execute(self, tool_input: Any, context: ToolContext) -> ToolResult:
         args = _as_mapping(tool_input)
         try:
-            path = _safe_path(context, _read_file_path(args))
+            path = _safe_path(context, _file_path(args))
         except ValueError as exc:
             return error_result(str(exc))
         view_range = args.get("view_range")
@@ -239,7 +239,7 @@ class ReadFileTool(Tool):
         return text_result(_render_read_lines(text, offset, limit))
 
 
-def _read_file_path(args: Mapping[str, Any]) -> str:
+def _file_path(args: Mapping[str, Any]) -> str:
     path = ""
     for name in ("file_path", "path", "file"):
         value = args.get(name)
@@ -329,8 +329,11 @@ class WriteFileTool(Tool):
 
     def execute(self, tool_input: Any, context: ToolContext) -> ToolResult:
         args = _as_mapping(tool_input)
-        raw_path = str(args.get("path") or args.get("file") or "")
-        path = _safe_path(context, raw_path)
+        try:
+            raw_path = _file_path(args)
+            path = _safe_path(context, raw_path)
+        except ValueError as exc:
+            return error_result(str(exc))
         content = str(args.get("content") or "")
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         verified = _safe_path(context, raw_path)
@@ -345,8 +348,11 @@ class EditFileTool(Tool):
 
     def execute(self, tool_input: Any, context: ToolContext) -> ToolResult:
         args = _as_mapping(tool_input)
-        raw_path = str(args.get("path") or args.get("file") or "")
-        path = _safe_path(context, raw_path)
+        try:
+            raw_path = _file_path(args)
+            path = _safe_path(context, raw_path)
+        except ValueError as exc:
+            return error_result(str(exc))
         old = str(args.get("old_string") or args.get("old") or "")
         new = str(args.get("new_string") or args.get("new") or "")
         if not old:

@@ -165,6 +165,50 @@ def test_read_keeps_legacy_inputs_without_ambiguity(tmp_path) -> None:
     assert _text(range_conflict) == "view_range cannot be combined with offset or limit"
 
 
+@pytest.mark.parametrize("path_key", ["file_path", "path", "file"])
+def test_file_tools_accept_path_aliases(tmp_path, path_key) -> None:
+    context = ToolContext(workdir=str(tmp_path))
+    source = tmp_path / "source.txt"
+    source.write_text("old")
+
+    read = ReadFileTool().execute({path_key: "source.txt"}, context)
+    write = WriteFileTool().execute({path_key: "written.txt", "content": "created"}, context)
+    edit = EditFileTool().execute(
+        {path_key: "source.txt", "old_string": "old", "new_string": "new"},
+        context,
+    )
+
+    assert not read.is_error
+    assert not write.is_error
+    assert not edit.is_error
+    assert (tmp_path / "written.txt").read_text() == "created"
+    assert source.read_text() == "new"
+
+
+@pytest.mark.parametrize("tool", [ReadFileTool(), WriteFileTool(), EditFileTool()])
+def test_file_tools_validate_path_aliases(tmp_path, tool) -> None:
+    context = ToolContext(workdir=str(tmp_path))
+    (tmp_path / "example.txt").write_text("old")
+    common = {
+        "file_path": "example.txt",
+        "path": "example.txt",
+        "file": "example.txt",
+        "content": "new",
+        "old_string": "old",
+        "new_string": "new",
+    }
+
+    same = tool.execute(common, context)
+    conflict = tool.execute({**common, "path": "other.txt"}, context)
+    missing = tool.execute({"content": "new", "old_string": "old", "new_string": "new"}, context)
+
+    assert not same.is_error
+    assert conflict.is_error
+    assert _text(conflict) == "file_path, path, and file must not conflict"
+    assert missing.is_error
+    assert _text(missing) == "file_path is required"
+
+
 def test_grep_skips_symlink_that_escapes_workdir(tmp_path) -> None:
     outside = tmp_path.parent / f"{tmp_path.name}-outside"
     outside.mkdir()
