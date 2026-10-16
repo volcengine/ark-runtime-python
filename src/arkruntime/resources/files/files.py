@@ -146,6 +146,7 @@ class Files(SyncAPIResource):
         self,
         *,
         # AUTOGEN-START list-kwargs
+        scope_id: Optional[str] = None,
         purpose: Optional[Literal["user_data", "agent", "voice"]] = None,
         after: Optional[str] = None,
         limit: Optional[int] = None,
@@ -167,6 +168,7 @@ class Files(SyncAPIResource):
                 query=maybe_transform(
                     {
                         # AUTOGEN-START list-query
+                        "scope_id": scope_id,
                         "purpose": purpose,
                         "after": after,
                         "limit": limit,
@@ -308,6 +310,7 @@ class AsyncFiles(AsyncAPIResource):
         self,
         *,
         # AUTOGEN-START list-kwargs
+        scope_id: Optional[str] = None,
         purpose: Optional[Literal["user_data", "agent", "voice"]] = None,
         after: Optional[str] = None,
         limit: Optional[int] = None,
@@ -329,6 +332,7 @@ class AsyncFiles(AsyncAPIResource):
                 query=maybe_transform(
                     {
                         # AUTOGEN-START list-query
+                        "scope_id": scope_id,
                         "purpose": purpose,
                         "after": after,
                         "limit": limit,
