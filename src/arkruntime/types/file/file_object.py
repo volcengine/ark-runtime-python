@@ -15,6 +15,7 @@ from .file_error import FileError
 from .preprocess_configs import PreprocessConfigs
 from .purpose import Purpose
 from .status import Status
+from .tos_location import TosLocation
 
 
 class FileObject(BaseModel):
@@ -69,6 +70,10 @@ class FileObject(BaseModel):
     download_url: Optional[str] = None
     """
     Pre-signed download URL pointing at the underlying TOS object.
+    """
+    tos: Optional[TosLocation] = None
+    """
+    Stored object location. Only returned for files in user-owned TOS buckets.
     """
     error: Optional[FileError] = None
     """
