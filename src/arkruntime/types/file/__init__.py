@@ -16,6 +16,7 @@ from .order import Order
 from .preprocess_configs import PreprocessConfigs
 from .purpose import Purpose
 from .status import Status
+from .tos_location import TosLocation
 from .tos_storage import TosStorage
 from .video import Video
 
@@ -30,6 +31,7 @@ __all__ = [
     "PreprocessConfigs",
     "Purpose",
     "Status",
+    "TosLocation",
     "TosStorage",
     "Video",
 ]
