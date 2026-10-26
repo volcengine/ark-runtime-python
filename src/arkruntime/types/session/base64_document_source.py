@@ -16,6 +16,7 @@ class Base64DocumentSource(BaseModel):
     直接以 base64 携带的文档数据。
     """
 
+    type: Literal["base64"]
     data: str
     """
     base64 文档数据。
@@ -24,4 +25,3 @@ class Base64DocumentSource(BaseModel):
     """
     MIME 类型，如 `application/pdf`。
     """
-    type: Literal["base64"]

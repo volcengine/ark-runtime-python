@@ -11,6 +11,7 @@ from .agent_ref import AgentRef
 from .agent_with_upgrades import AgentWithUpgrades
 from .base64_document_source import Base64DocumentSource
 from .base64_image_source import Base64ImageSource
+from .base64_video_source import Base64VideoSource
 from .cache_creation import CacheCreation
 from .checkpoint_component import CheckpointComponent
 from .checkpoint_component_status import CheckpointComponentStatus
@@ -33,6 +34,7 @@ from .environment_with_overrides import EnvironmentWithOverrides
 from .environment_with_upgrades import EnvironmentWithUpgrades
 from .file_document_source import FileDocumentSource
 from .file_image_source import FileImageSource
+from .file_video_source import FileVideoSource
 from .get_session_checkpoint_response import GetSessionCheckpointResponse
 from .image_source import ImageSource
 from .list_session_checkpoints_response import ListSessionCheckpointsResponse
@@ -53,7 +55,13 @@ from .managed_agents_image_block import ManagedAgentsImageBlock
 from .managed_agents_message_content_block import ManagedAgentsMessageContentBlock
 from .managed_agents_rubric import ManagedAgentsRubric
 from .managed_agents_search_result_block import ManagedAgentsSearchResultBlock
+from .managed_agents_session_end_turn import ManagedAgentsSessionEndTurn
 from .managed_agents_session_event import ManagedAgentsSessionEvent
+from .managed_agents_session_requires_action import ManagedAgentsSessionRequiresAction
+from .managed_agents_session_retries_exhausted import (
+    ManagedAgentsSessionRetriesExhausted,
+)
+from .managed_agents_session_stop_reason import ManagedAgentsSessionStopReason
 from .managed_agents_start_event import ManagedAgentsStartEvent
 from .managed_agents_start_event_preview import ManagedAgentsStartEventPreview
 from .managed_agents_stream_preview_event import ManagedAgentsStreamPreviewEvent
@@ -84,6 +92,7 @@ from .managed_agents_user_tool_confirmation_event_params import (
 from .managed_agents_user_tool_result_event_params import (
     ManagedAgentsUserToolResultEventParams,
 )
+from .managed_agents_video_block import ManagedAgentsVideoBlock
 from .model_overrides import ModelOverrides
 from .model_upgrades import ModelUpgrades
 from .override_token_limits import OverrideTokenLimits
@@ -106,6 +115,8 @@ from .tool_confirmation_result import ToolConfirmationResult
 from .update_session_request import UpdateSessionRequest
 from .url_document_source import UrlDocumentSource
 from .url_image_source import UrlImageSource
+from .url_video_source import UrlVideoSource
+from .video_source import VideoSource
 
 __all__ = [
     "AgentIdentifier",
@@ -113,6 +124,7 @@ __all__ = [
     "AgentWithUpgrades",
     "Base64DocumentSource",
     "Base64ImageSource",
+    "Base64VideoSource",
     "CacheCreation",
     "CheckpointComponent",
     "CheckpointComponentStatus",
@@ -135,6 +147,7 @@ __all__ = [
     "EnvironmentWithUpgrades",
     "FileDocumentSource",
     "FileImageSource",
+    "FileVideoSource",
     "GetSessionCheckpointResponse",
     "ImageSource",
     "ListSessionCheckpointsResponse",
@@ -155,7 +168,11 @@ __all__ = [
     "ManagedAgentsMessageContentBlock",
     "ManagedAgentsRubric",
     "ManagedAgentsSearchResultBlock",
+    "ManagedAgentsSessionEndTurn",
     "ManagedAgentsSessionEvent",
+    "ManagedAgentsSessionRequiresAction",
+    "ManagedAgentsSessionRetriesExhausted",
+    "ManagedAgentsSessionStopReason",
     "ManagedAgentsStartEvent",
     "ManagedAgentsStartEventPreview",
     "ManagedAgentsStreamPreviewEvent",
@@ -170,6 +187,7 @@ __all__ = [
     "ManagedAgentsUserMessageEventParams",
     "ManagedAgentsUserToolConfirmationEventParams",
     "ManagedAgentsUserToolResultEventParams",
+    "ManagedAgentsVideoBlock",
     "ModelOverrides",
     "ModelUpgrades",
     "OverrideTokenLimits",
@@ -192,6 +210,8 @@ __all__ = [
     "UpdateSessionRequest",
     "UrlDocumentSource",
     "UrlImageSource",
+    "UrlVideoSource",
+    "VideoSource",
 ]
 
 # Hand-written extras (preserved across regen via Makefile rsync --exclude=*_shim.py).

@@ -19,6 +19,7 @@ class ManagedAgentsSearchResultBlock(BaseModel):
     搜索结果块——多个 SearchResultContent 文本片段 + 元信息。
     """
 
+    type: Literal["search_result"]
     citations: SearchResultCitations
     """
     citation 控制。
@@ -35,4 +36,3 @@ class ManagedAgentsSearchResultBlock(BaseModel):
     """
     结果标题。
     """
-    type: Literal["search_result"]

@@ -15,6 +15,9 @@ from .message_content_param import MessageContentParam
 
 
 class ItemFunctionToolCallOutputParam(TypedDict, total=False):
+    namespace: Optional[str]
+    """Namespace of the function whose result is being supplied."""
+
     type: Required[Literal["function_call_output"]]
 
     call_id: Optional[str]

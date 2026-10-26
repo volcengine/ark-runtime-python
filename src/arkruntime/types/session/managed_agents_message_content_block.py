@@ -14,17 +14,21 @@ from typing_extensions import Annotated, TypeAliasType
 from .managed_agents_document_block import ManagedAgentsDocumentBlock
 from .managed_agents_image_block import ManagedAgentsImageBlock
 from .managed_agents_text_block import ManagedAgentsTextBlock
+from .managed_agents_video_block import ManagedAgentsVideoBlock
 
 ManagedAgentsMessageContentBlock = TypeAliasType(
     "ManagedAgentsMessageContentBlock",
     Annotated[
         Union[
-            ManagedAgentsTextBlock, ManagedAgentsImageBlock, ManagedAgentsDocumentBlock
+            ManagedAgentsTextBlock,
+            ManagedAgentsImageBlock,
+            ManagedAgentsDocumentBlock,
+            ManagedAgentsVideoBlock,
         ],
         Field(discriminator="type"),
     ],
 )
 """
 `user.message` 的 content 列表元素 tagged union（discriminator = `type`）。
-支持 3 种模态：`text` / `image` / `document`。
+支持 4 种模态：`text` / `image` / `document` / `video`。
 """

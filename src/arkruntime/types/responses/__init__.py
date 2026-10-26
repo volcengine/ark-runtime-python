@@ -66,6 +66,8 @@ from .item_output_message import ItemOutputMessage
 from .item_reasoning import ItemReasoning
 from .item_reference import ItemReference
 from .item_status import ItemStatus
+from .item_tool_search_call import ItemToolSearchCall
+from .item_tool_search_output import ItemToolSearchOutput
 from .item_transcription import ItemTranscription
 from .knowledge_search_tool import KnowledgeSearchTool
 from .list_input_items_response import ListInputItemsResponse
@@ -80,6 +82,7 @@ from .mcp_tool_approval_filter_always import McpToolApprovalFilterAlways
 from .mcp_tool_approval_filter_never import McpToolApprovalFilterNever
 from .message_content import MessageContent
 from .message_role import MessageRole
+from .namespace_tool import NamespaceTool
 from .order import Order
 from .output_content_item import OutputContentItem
 from .output_content_item_reasoning_text import OutputContentItemReasoningText
@@ -248,6 +251,9 @@ from .tool_choice_mcp import ToolChoiceMcp
 from .tool_choice_options import ToolChoiceOptions
 from .tool_choice_web_search import ToolChoiceWebSearch
 from .tool_name_list import ToolNameList
+from .tool_search_execution import ToolSearchExecution
+from .tool_search_result_tool import ToolSearchResultTool
+from .tool_search_tool import ToolSearchTool
 from .tool_usage import ToolUsage
 from .tool_usage_details import ToolUsageDetails
 from .tool_uses_keep import ToolUsesKeep
@@ -322,6 +328,8 @@ __all__ = [
     "ItemReasoning",
     "ItemReference",
     "ItemStatus",
+    "ItemToolSearchCall",
+    "ItemToolSearchOutput",
     "ItemTranscription",
     "KnowledgeSearchTool",
     "ListInputItemsResponse",
@@ -336,6 +344,7 @@ __all__ = [
     "McpToolApprovalFilterNever",
     "MessageContent",
     "MessageRole",
+    "NamespaceTool",
     "Order",
     "OutputContentItem",
     "OutputContentItemReasoningText",
@@ -436,6 +445,9 @@ __all__ = [
     "ToolChoiceOptions",
     "ToolChoiceWebSearch",
     "ToolNameList",
+    "ToolSearchExecution",
+    "ToolSearchResultTool",
+    "ToolSearchTool",
     "ToolUsage",
     "ToolUsageDetails",
     "ToolUsesKeep",
@@ -485,6 +497,8 @@ from .item_function_mcp_list_tools_param import ItemFunctionMcpListToolsParam
 from .item_function_tool_call_output_param import ItemFunctionToolCallOutputParam
 from .item_function_tool_call_param import ItemFunctionToolCallParam
 from .item_reasoning_param import ItemReasoningParam
+from .item_tool_search_call_param import ItemToolSearchCallParam
+from .item_tool_search_output_param import ItemToolSearchOutputParam
 from .knowledge_search_tool_param import KnowledgeSearchToolParam
 from .mcp_allowed_tools_filter_param import McpAllowedToolsFilterParam
 from .mcp_allowed_tools_param import McpAllowedToolsParam
@@ -495,6 +509,7 @@ from .mcp_tool_approval_filter_never_param import McpToolApprovalFilterNeverPara
 from .mcp_tool_approval_filter_param import McpToolApprovalFilterParam
 from .mcp_tool_param import McpToolParam
 from .message_content_param import MessageContentParam
+from .namespace_tool_param import NamespaceToolParam
 from .output_content_item_param import OutputContentItemParam
 from .output_content_item_reasoning_text_param import (
     OutputContentItemReasoningTextParam,
@@ -517,6 +532,8 @@ from .tool_choice_param import ToolChoiceParam
 from .tool_choice_web_search_param import ToolChoiceWebSearchParam
 from .tool_name_list_param import ToolNameListParam
 from .tool_param import ToolParam
+from .tool_search_result_tool_param import ToolSearchResultToolParam
+from .tool_search_tool_param import ToolSearchToolParam
 from .tool_uses_keep_param import ToolUsesKeepParam
 from .tool_uses_trigger_param import ToolUsesTriggerParam
 from .typed_tool_choice_param import TypedToolChoiceParam

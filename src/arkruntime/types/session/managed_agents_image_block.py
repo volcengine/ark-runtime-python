@@ -18,8 +18,8 @@ class ManagedAgentsImageBlock(BaseModel):
     图片块。
     """
 
+    type: Literal["image"]
     source: ImageSource
     """
     图片来源。
     """
-    type: Literal["image"]

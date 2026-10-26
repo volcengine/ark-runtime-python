@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from arkruntime._models import BaseModel
 
 
@@ -14,6 +16,7 @@ class SearchResultContent(BaseModel):
     搜索结果内的纯文本片段。
     """
 
+    type: Literal["text"]
     text: str
     """
     文本内容。

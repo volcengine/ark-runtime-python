@@ -15,10 +15,14 @@ from .function_tool_param import FunctionToolParam
 from .image_process_tool_param import ImageProcessToolParam
 from .knowledge_search_tool_param import KnowledgeSearchToolParam
 from .mcp_tool_param import McpToolParam
+from .namespace_tool_param import NamespaceToolParam
+from .tool_search_tool_param import ToolSearchToolParam
 from .web_search_tool_param import WebSearchToolParam
 
 ToolParam: TypeAlias = Union[
     FunctionToolParam,
+    NamespaceToolParam,
+    ToolSearchToolParam,
     WebSearchToolParam,
     ImageProcessToolParam,
     McpToolParam,

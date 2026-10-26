@@ -16,8 +16,8 @@ class FileDocumentSource(BaseModel):
     通过 Files API 上传后引用的文档。
     """
 
+    type: Literal["file"]
     file_id: str
     """
     file id，形如 `file_...`。
     """
-    type: Literal["file"]

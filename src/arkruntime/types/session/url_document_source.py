@@ -16,8 +16,8 @@ class UrlDocumentSource(BaseModel):
     通过 URL 引用的文档。
     """
 
+    type: Literal["url"]
     url: str
     """
     文档 URL。
     """
-    type: Literal["url"]

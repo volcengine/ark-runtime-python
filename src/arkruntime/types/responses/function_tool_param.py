@@ -27,3 +27,6 @@ class FunctionToolParam(TypedDict, total=False):
 
     Used by the model to determine whether or not to call the function.
     """
+
+    defer_loading: Optional[bool]
+    """Defer the full schema until tool_search loads this function. Defaults to false."""

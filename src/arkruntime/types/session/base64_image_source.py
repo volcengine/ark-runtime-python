@@ -16,6 +16,7 @@ class Base64ImageSource(BaseModel):
     直接以 base64 携带的图片数据。
     """
 
+    type: Literal["base64"]
     data: str
     """
     base64 图片数据。
@@ -24,4 +25,3 @@ class Base64ImageSource(BaseModel):
     """
     MIME 类型，如 `image/png` / `image/jpeg`。
     """
-    type: Literal["base64"]

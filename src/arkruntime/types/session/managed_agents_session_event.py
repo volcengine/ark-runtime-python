@@ -10,6 +10,8 @@ from typing import Optional
 
 from arkruntime._models import BaseModel
 
+from .managed_agents_session_stop_reason import ManagedAgentsSessionStopReason
+
 
 class ManagedAgentsSessionEvent(BaseModel):
     """
@@ -31,4 +33,8 @@ class ManagedAgentsSessionEvent(BaseModel):
     processed_at: Optional[str] = None
     """
     事件产生时间（RFC 3339）。
+    """
+    stop_reason: Optional[ManagedAgentsSessionStopReason] = None
+    """
+    `session.status_idle` / `session.thread_status_idle` 的停止原因。
     """

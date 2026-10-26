@@ -16,6 +16,8 @@ from .function_tool import FunctionTool
 from .image_process_tool import ImageProcessTool
 from .knowledge_search_tool import KnowledgeSearchTool
 from .mcp_tool import McpTool
+from .namespace_tool import NamespaceTool
+from .tool_search_tool import ToolSearchTool
 from .web_search_tool import WebSearchTool
 
 Tool = TypeAliasType(
@@ -23,6 +25,8 @@ Tool = TypeAliasType(
     Annotated[
         Union[
             FunctionTool,
+            NamespaceTool,
+            ToolSearchTool,
             WebSearchTool,
             ImageProcessTool,
             McpTool,

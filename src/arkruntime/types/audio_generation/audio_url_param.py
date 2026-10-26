@@ -14,4 +14,4 @@ from .non_empty_string_param import NonEmptyStringParam
 
 class AudioURLParam(TypedDict, total=False):
     url: Required[NonEmptyStringParam]
-    """Public HTTP(S) URL, speaker://<id>, file://<file_id> for registered reference audio, or data:audio/{wav,mp3};base64,<payload>. Decoded base64 audio is limited to 15 MiB for reference generation; separation uses a 90 MiB source-audio limit. A speaker reference cannot be used for separation."""
+    """Public HTTP(S) URL, speaker://<id> for a preset speaker, file://<file_id> for a custom voice registered through the Files API, or data:audio/{wav,mp3};base64,<payload>. Voice-cloning speaker IDs are not supported. Decoded base64 audio is limited to 15 MiB for reference generation; separation uses a 90 MiB source-audio limit. A speaker reference cannot be used for separation."""

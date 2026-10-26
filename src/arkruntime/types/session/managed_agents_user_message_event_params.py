@@ -25,7 +25,7 @@ class ManagedAgentsUserMessageEventParams(BaseModel):
 
     content: Optional[List[ManagedAgentsMessageContentBlock]] = None
     """
-    消息 content：多模态 block 列表（text / image / document）。
+    消息 content：多模态 block 列表（text / image / document / video）。
     """
     session_id: Optional[str] = None
     """

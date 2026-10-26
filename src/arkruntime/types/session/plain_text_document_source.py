@@ -16,6 +16,7 @@ class PlainTextDocumentSource(BaseModel):
     纯文本文档；`media_type` 必须为 `text/plain`；`data` 是原文。
     """
 
+    type: Literal["text"]
     data: str
     """
     文档原文。
@@ -24,4 +25,3 @@ class PlainTextDocumentSource(BaseModel):
     """
     MIME 类型，固定 `text/plain`。
     """
-    type: Literal["text"]

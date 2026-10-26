@@ -31,6 +31,10 @@ class ItemFunctionToolCall(BaseModel):
     """
     The name of the function to call.
     """
+    namespace: Optional[str] = None
+    """
+    Namespace of the called function, omitted for top-level functions.
+    """
     status: Optional[ItemStatus] = None
     """
     The status of the item.

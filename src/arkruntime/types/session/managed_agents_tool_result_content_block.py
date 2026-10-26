@@ -15,6 +15,7 @@ from .managed_agents_document_block import ManagedAgentsDocumentBlock
 from .managed_agents_image_block import ManagedAgentsImageBlock
 from .managed_agents_search_result_block import ManagedAgentsSearchResultBlock
 from .managed_agents_text_block import ManagedAgentsTextBlock
+from .managed_agents_video_block import ManagedAgentsVideoBlock
 
 ManagedAgentsToolResultContentBlock = TypeAliasType(
     "ManagedAgentsToolResultContentBlock",
@@ -24,11 +25,12 @@ ManagedAgentsToolResultContentBlock = TypeAliasType(
             ManagedAgentsImageBlock,
             ManagedAgentsDocumentBlock,
             ManagedAgentsSearchResultBlock,
+            ManagedAgentsVideoBlock,
         ],
         Field(discriminator="type"),
     ],
 )
 """
 `user.tool_result.content` / `user.custom_tool_result.content` 允许的 block
-类型 tagged union：`text` / `image` / `document` / `search_result`。
+类型 tagged union：`text` / `image` / `document` / `search_result` / `video`。
 """
