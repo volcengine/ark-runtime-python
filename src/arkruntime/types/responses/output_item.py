@@ -22,6 +22,8 @@ from .item_function_tool_call import ItemFunctionToolCall
 from .item_function_web_search import ItemFunctionWebSearch
 from .item_output_message import ItemOutputMessage
 from .item_reasoning import ItemReasoning
+from .item_tool_search_call import ItemToolSearchCall
+from .item_tool_search_output import ItemToolSearchOutput
 from .item_transcription import ItemTranscription
 
 OutputItem = TypeAliasType(
@@ -30,6 +32,8 @@ OutputItem = TypeAliasType(
         Union[
             ItemOutputMessage,
             ItemFunctionToolCall,
+            ItemToolSearchCall,
+            ItemToolSearchOutput,
             ItemReasoning,
             ItemTranscription,
             ItemFunctionWebSearch,

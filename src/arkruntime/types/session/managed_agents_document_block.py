@@ -18,6 +18,7 @@ class ManagedAgentsDocumentBlock(BaseModel):
     文档块。
     """
 
+    type: Literal["document"]
     source: DocumentSource
     """
     文档来源。
@@ -30,4 +31,3 @@ class ManagedAgentsDocumentBlock(BaseModel):
     """
     上下文说明。
     """
-    type: Literal["document"]

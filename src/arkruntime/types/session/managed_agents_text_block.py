@@ -16,8 +16,8 @@ class ManagedAgentsTextBlock(BaseModel):
     文本块。用于 user.message / tool_result / system.message 的 content 列表。
     """
 
+    type: Literal["text"]
     text: str
     """
     文本内容。
     """
-    type: Literal["text"]

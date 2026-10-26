@@ -28,5 +28,8 @@ class ItemFunctionToolCallParam(TypedDict, total=False):
     name: Optional[str]
     """The name of the function to call."""
 
+    namespace: Optional[str]
+    """Namespace of the called function, omitted for top-level functions."""
+
     status: Optional[ItemStatus]
     """The status of the item."""

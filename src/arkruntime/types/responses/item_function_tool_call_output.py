@@ -15,6 +15,10 @@ from .message_content import MessageContent
 
 
 class ItemFunctionToolCallOutput(BaseModel):
+    namespace: Optional[str] = None
+    """
+    Namespace of the function whose result is being supplied.
+    """
     type: Literal["function_call_output"]
     call_id: Optional[str] = None
     output: Optional[MessageContent] = None

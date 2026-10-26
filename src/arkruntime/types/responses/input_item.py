@@ -19,6 +19,8 @@ from .item_function_mcp_list_tools import ItemFunctionMcpListTools
 from .item_function_tool_call import ItemFunctionToolCall
 from .item_function_tool_call_output import ItemFunctionToolCallOutput
 from .item_reasoning import ItemReasoning
+from .item_tool_search_call import ItemToolSearchCall
+from .item_tool_search_output import ItemToolSearchOutput
 
 InputItem = TypeAliasType(
     "InputItem",
@@ -26,6 +28,8 @@ InputItem = TypeAliasType(
         Union[
             ItemEasyMessage,
             ItemFunctionToolCall,
+            ItemToolSearchCall,
+            ItemToolSearchOutput,
             ItemFunctionToolCallOutput,
             ItemReasoning,
             ItemFunctionMcpApprovalRequest,

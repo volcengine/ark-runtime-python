@@ -22,10 +22,14 @@ from .item_function_mcp_list_tools_param import ItemFunctionMcpListToolsParam
 from .item_function_tool_call_output_param import ItemFunctionToolCallOutputParam
 from .item_function_tool_call_param import ItemFunctionToolCallParam
 from .item_reasoning_param import ItemReasoningParam
+from .item_tool_search_call_param import ItemToolSearchCallParam
+from .item_tool_search_output_param import ItemToolSearchOutputParam
 
 InputItemParam: TypeAlias = Union[
     ItemEasyMessageParam,
     ItemFunctionToolCallParam,
+    ItemToolSearchCallParam,
+    ItemToolSearchOutputParam,
     ItemFunctionToolCallOutputParam,
     ItemReasoningParam,
     ItemFunctionMcpApprovalRequestParam,

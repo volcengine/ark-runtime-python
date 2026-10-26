@@ -16,8 +16,8 @@ class UrlImageSource(BaseModel):
     通过 URL 引用的图片。
     """
 
+    type: Literal["url"]
     url: str
     """
     图片 URL。
     """
-    type: Literal["url"]

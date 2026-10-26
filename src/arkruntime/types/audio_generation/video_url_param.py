@@ -14,4 +14,4 @@ from .non_empty_string_param import NonEmptyStringParam
 
 class VideoURLParam(TypedDict, total=False):
     url: Required[NonEmptyStringParam]
-    """Public HTTP(S) URL or tos://<bucket>/<key>. Base64 and speaker references are not supported. Media properties and size are validated by the server."""
+    """Public HTTP(S) URL or tos://<bucket>/<key>. Supported video resolutions: 360p, 480p, 720p and 1080p; minimum total pixel count (width * height): 172800. Base64 and speaker references are not supported. Media properties and size are validated by the server."""
