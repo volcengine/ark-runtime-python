@@ -77,6 +77,8 @@ class ManagedAgentsStopReason(_DictCompatModel):
     """
 
     type: str = ""
+    # Pending input event IDs when type is requires_action.
+    event_ids: Optional[List[str]] = None
 
 
 class ManagedAgentsRetryStatus(_DictCompatModel):
