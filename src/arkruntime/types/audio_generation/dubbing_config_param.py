@@ -22,5 +22,5 @@ class DubbingConfigParam(TypedDict, total=False):
     target_language: Required[TargetLanguage]
     """Required for dubbing; accepted values match the dubbing validator."""
 
-    glossaries: Optional[Optional[GlossariesParam]]
+    glossaries: Optional[GlossariesParam]
     """Terminology pairs; source == target denotes a hotword. For duplicate sources, terminology overrides hotwords regardless of order; the last terminology target wins."""

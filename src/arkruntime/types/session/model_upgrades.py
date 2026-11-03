@@ -6,9 +6,11 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Dict, Optional
 
 from arkruntime._models import BaseModel
+
+from .override_token_limits import OverrideTokenLimits
 
 
 class ModelUpgrades(BaseModel):
@@ -49,4 +51,34 @@ class ModelUpgrades(BaseModel):
     service_tier: Optional[str] = None
     """
     服务档位。
+    """
+    provider: Optional[str] = None
+    """
+    目标模型提供方。
+
+    切到非 `ark` provider 时，`base_url` 与 `token_limits` 必填（可继承
+    当前 Session 快照中已有的值，否则返回 400）；`ark` provider 不允许
+    指定 `token_limits` 或非空 `base_url`。
+    """
+    protocol: Optional[str] = None
+    """
+    目标模型接入协议；取值须命中服务端维护的接入协议白名单，非法值返回
+    400。
+    """
+    base_url: Optional[str] = None
+    """
+    自定义模型接入点 base URL。配合非 `ark` 的 `provider` 使用；
+    `ark` provider 指定非空值时返回 400。
+    """
+    headers: Optional[Dict[str, str]] = None
+    """
+    模型静态请求 header（整组覆写）。
+
+    仅用于非认证类静态 header；认证 header 必须由 SendEvent 请求上的
+    `X-User-Model-Header-*` 动态提供。
+    """
+    token_limits: Optional[OverrideTokenLimits] = None
+    """
+    模型 token 限制。非 `ark` provider 提供时必须包含三个字段；可继承
+    当前 Session 快照中已有的值。
     """

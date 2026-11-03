@@ -11,6 +11,7 @@ from typing import Dict, List, Optional
 from arkruntime._models import BaseModel
 
 from .agent_skill_ref import AgentSkillRef
+from .context_management_policies import ContextManagementPolicies
 from .mcp_server import MCPServer
 from .model_config import ModelConfig
 from .multiagent_config import MultiagentConfig
@@ -21,6 +22,9 @@ from .tool_item import ToolItem
 class CreateAgentRequest(BaseModel):
     """
     创建 Agent 的请求体。
+
+    multiagent_20261001 必须携带非 null 的 subagents；该条件由服务端校验，
+    并通过 dependentSchemas 写入公开契约。
     """
 
     name: str
@@ -57,7 +61,7 @@ class CreateAgentRequest(BaseModel):
     """
     multiagent: Optional[MultiagentConfig] = None
     """
-    多 Agent 编排拓扑。
+    多 Agent 编排拓扑。multiagent_20261001 时 subagents 必填且不能为 null。
     """
     metadata: Optional[Dict[str, str]] = None
     """
@@ -66,4 +70,9 @@ class CreateAgentRequest(BaseModel):
     tags: Optional[List[Tag]] = None
     """
     资源标签。
+    """
+    context_management: Optional[ContextManagementPolicies] = None
+    """
+    上下文管理策略，最多一条 compaction。省略、null 或 [] 均表示不配置自定义策略；
+    SDK 不会自动填入服务端公开响应中的展示默认阈值。
     """

@@ -258,6 +258,17 @@ class ManagedAgentsAgentToolUseEvent(_SessionEventBase):
     input: Any = None
 
 
+class ManagedAgentsAgentCustomToolUseEvent(_SessionEventBase):
+    """Agent invoked a custom tool owned by the caller. The runtime waits
+    for a matching ``user.custom_tool_result`` before continuing.
+    """
+
+    session_thread_id: str = ""
+    custom_tool_use_id: str = ""
+    name: str = ""
+    input: Any = None
+
+
 class ManagedAgentsAgentToolResultEvent(_SessionEventBase):
     """Tool's result (post ``user.tool_result`` if the tool required
     client-side execution, or runtime-owned if it was a builtin/MCP tool).
@@ -405,6 +416,7 @@ _EVENT_TYPE_MAP: Dict[str, Type[_SessionEventBase]] = {
     "agent.message": ManagedAgentsAgentMessageEvent,
     "agent.thinking": ManagedAgentsAgentThinkingEvent,
     "agent.tool_use": ManagedAgentsAgentToolUseEvent,
+    "agent.custom_tool_use": ManagedAgentsAgentCustomToolUseEvent,
     "agent.tool_result": ManagedAgentsAgentToolResultEvent,
     "agent.mcp_tool_use": ManagedAgentsAgentMCPToolUseEvent,
     "agent.mcp_tool_result": ManagedAgentsAgentMCPToolResultEvent,

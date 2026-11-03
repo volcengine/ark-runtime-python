@@ -23,7 +23,8 @@ concurrency:
 jobs:
   minimum-python-import:
     name: Import on Python ${{ matrix.python-version }}
-    runs-on: ubuntu-latest
+    # Python 3.8/3.9 setup-python builds are unavailable on Ubuntu 26.04.
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     strategy:
       fail-fast: false

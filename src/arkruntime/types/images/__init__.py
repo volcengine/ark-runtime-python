@@ -14,12 +14,18 @@ from .image_error import ImageError
 from .image_generation_response import ImageGenerationResponse
 from .image_generation_stream_event import ImageGenerationStreamEvent
 from .image_generation_stream_event_type import ImageGenerationStreamEventType
+from .layer_decomposition_options import LayerDecompositionOptions
 from .optimize_prompt_mode import OptimizePromptMode
 from .optimize_prompt_options import OptimizePromptOptions
+from .output_background import OutputBackground
 from .output_format import OutputFormat
 from .response_format import ResponseFormat
 from .sequential_image_generation_mode import SequentialImageGenerationMode
 from .sequential_image_generation_options import SequentialImageGenerationOptions
+from .text_line import TextLine
+from .text_recognition import TextRecognition
+from .text_run import TextRun
+from .text_style import TextStyle
 from .tool import Tool
 from .tool_type import ToolType
 from .tool_usage import ToolUsage
@@ -34,18 +40,25 @@ __all__ = [
     "ImageGenerationResponse",
     "ImageGenerationStreamEvent",
     "ImageGenerationStreamEventType",
+    "LayerDecompositionOptions",
     "OptimizePromptMode",
     "OptimizePromptOptions",
+    "OutputBackground",
     "OutputFormat",
     "ResponseFormat",
     "SequentialImageGenerationMode",
     "SequentialImageGenerationOptions",
+    "TextLine",
+    "TextRecognition",
+    "TextRun",
+    "TextStyle",
     "Tool",
     "ToolType",
     "ToolUsage",
     "Usage",
 ]
 from .create_image_generation_request_param import CreateImageGenerationRequestParam
+from .layer_decomposition_options_param import LayerDecompositionOptionsParam
 from .optimize_prompt_options_param import OptimizePromptOptionsParam
 from .sequential_image_generation_options_param import (
     SequentialImageGenerationOptionsParam,

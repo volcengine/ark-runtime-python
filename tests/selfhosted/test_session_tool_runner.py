@@ -8,7 +8,14 @@ import time
 
 import pytest
 
-from arkruntime.selfhosted import Event, ListEventsResponse, SessionToolRunner, SessionToolRunnerOptions
+import arkruntime.selfhosted.session_tool_runner as session_tool_runner_module
+from arkruntime.selfhosted import (
+    Event,
+    ListEventsResponse,
+    SessionTerminated,
+    SessionToolRunner,
+    SessionToolRunnerOptions,
+)
 from arkruntime.selfhosted.tool_result_store import ToolCallStoreDecision
 from arkruntime.selfhosted.tools import FunctionTool, ToolContext, ToolSet, text_result
 
@@ -156,6 +163,179 @@ def test_duplicate_stream_idle_event_does_not_reset_idle_deadline(tmp_path) -> N
     runner._state.handle_stream_event(event)
 
     assert runner._state.idle_armed_at == armed_at
+
+
+def test_stream_runner_logs_lifecycle_and_timeout(tmp_path, caplog) -> None:
+    class StreamAPI:
+        timeout = None
+
+        def list_events(self, _session_id, **_kwargs):
+            return ListEventsResponse()
+
+        def stream_events(self, _session_id, *, timeout):
+            self.timeout = timeout
+            yield Event(id="terminated", type="session.status_terminated")
+
+    api = StreamAPI()
+    runner = SessionToolRunner(
+        api,
+        "session-1",
+        SessionToolRunnerOptions(
+            work_id="work-1",
+            tools=ToolSet(),
+            tool_context=ToolContext(workdir=str(tmp_path)),
+            stream_timeout_seconds=12.5,
+            initial_session_status="running",
+        ),
+    )
+
+    with caplog.at_level("INFO"), pytest.raises(SessionTerminated):
+        runner.run()
+
+    assert api.timeout == 12.5
+    assert "session runner started" in caplog.text
+    assert "session stream connecting" in caplog.text
+    assert "attempt=1 timeout=12.500s" in caplog.text
+    assert "session first business event" in caplog.text
+    assert "session status changed" in caplog.text
+    assert "session runner stopped" in caplog.text
+
+
+def test_stream_runner_logs_reconnect_after_transport_error(tmp_path, caplog, monkeypatch) -> None:
+    class StreamAPI:
+        attempts = 0
+
+        def list_events(self, _session_id, **_kwargs):
+            return ListEventsResponse()
+
+        def stream_events(self, _session_id, *, timeout):
+            self.attempts += 1
+            if self.attempts == 1:
+                raise RuntimeError("temporary stream failure")
+            yield Event(id="terminated", type="session.status_terminated")
+
+    monkeypatch.setattr(session_tool_runner_module, "_jitter", lambda _seconds: 0.0)
+    api = StreamAPI()
+    runner = SessionToolRunner(
+        api,
+        "session-1",
+        SessionToolRunnerOptions(
+            work_id="work-1",
+            tools=ToolSet(),
+            tool_context=ToolContext(workdir=str(tmp_path)),
+        ),
+    )
+
+    with caplog.at_level("INFO"), pytest.raises(SessionTerminated):
+        runner.run()
+
+    assert api.attempts == 2
+    assert "session stream disconnected" in caplog.text
+    assert "temporary stream failure" in caplog.text
+    assert "attempt=2" in caplog.text
+
+
+def test_running_session_logs_no_progress_warning(tmp_path, caplog, monkeypatch) -> None:
+    monkeypatch.setattr(session_tool_runner_module, "STREAM_PROGRESS_WARN_SECONDS", 0.0)
+    runner = SessionToolRunner(
+        object(),
+        "session-1",
+        SessionToolRunnerOptions(
+            work_id="work-1",
+            tools=ToolSet(),
+            tool_context=ToolContext(workdir=str(tmp_path)),
+            initial_session_status="running",
+        ),
+    )
+
+    with caplog.at_level("WARNING"):
+        runner._state.maybe_log_no_progress()
+
+    assert "session has no business progress" in caplog.text
+    assert "events=0" in caplog.text
+
+
+def test_entering_running_resets_no_progress_baseline(tmp_path, caplog, monkeypatch) -> None:
+    monkeypatch.setattr(session_tool_runner_module, "STREAM_PROGRESS_WARN_SECONDS", 60.0)
+    runner = SessionToolRunner(
+        object(),
+        "session-1",
+        SessionToolRunnerOptions(
+            work_id="work-1",
+            tools=ToolSet(),
+            tool_context=ToolContext(workdir=str(tmp_path)),
+            initial_session_status="idle",
+        ),
+    )
+    runner._state.last_business_event_at -= 61
+
+    with caplog.at_level("WARNING"):
+        runner._state.handle_stream_event(Event(type="session.status_running"))
+        runner._state.maybe_log_no_progress()
+
+    assert "session has no business progress" not in caplog.text
+
+
+def test_span_progress_frame_does_not_hide_business_no_progress_warning(tmp_path, caplog, monkeypatch) -> None:
+    monkeypatch.setattr(session_tool_runner_module, "STREAM_PROGRESS_WARN_SECONDS", 60.0)
+    runner = SessionToolRunner(
+        object(),
+        "session-1",
+        SessionToolRunnerOptions(
+            work_id="work-1",
+            tools=ToolSet(),
+            tool_context=ToolContext(workdir=str(tmp_path)),
+            initial_session_status="running",
+        ),
+    )
+    runner._state.last_business_event_at -= 61
+    runner._state.last_progress_warning_at = 0.0
+
+    with caplog.at_level("WARNING"):
+        runner._state.handle_stream_event(Event(id="span-1", type="span.outcome_evaluation_ongoing"))
+        runner._state.maybe_log_no_progress()
+
+    assert "session has no business progress" in caplog.text
+
+
+def test_keyless_event_does_not_refresh_progress_or_event_count(tmp_path, caplog, monkeypatch) -> None:
+    monkeypatch.setattr(session_tool_runner_module, "STREAM_PROGRESS_WARN_SECONDS", 0.0)
+    runner = SessionToolRunner(
+        object(),
+        "session-1",
+        SessionToolRunnerOptions(
+            work_id="work-1",
+            tools=ToolSet(),
+            tool_context=ToolContext(workdir=str(tmp_path)),
+            initial_session_status="running",
+        ),
+    )
+
+    with caplog.at_level("WARNING"):
+        runner._state.handle_stream_event(Event(type="agent.message"))
+        runner._state.maybe_log_no_progress()
+
+    assert runner._state.event_count == 0
+    assert "session has no business progress" in caplog.text
+
+
+def test_idle_session_does_not_log_no_progress_warning(tmp_path, caplog, monkeypatch) -> None:
+    monkeypatch.setattr(session_tool_runner_module, "STREAM_PROGRESS_WARN_SECONDS", 0.0)
+    runner = SessionToolRunner(
+        object(),
+        "session-1",
+        SessionToolRunnerOptions(
+            work_id="work-1",
+            tools=ToolSet(),
+            tool_context=ToolContext(workdir=str(tmp_path)),
+            initial_session_status="idle",
+        ),
+    )
+
+    with caplog.at_level("WARNING"):
+        runner._state.maybe_log_no_progress()
+
+    assert "session has no business progress" not in caplog.text
 
 
 def test_reconcile_does_not_reset_idle_deadline_for_seen_history(tmp_path) -> None:
@@ -639,6 +819,448 @@ def test_current_blocker_reuses_recovered_result_without_reexecution(tmp_path) -
     assert not executions
     assert sent == [result]
     assert store.marked == ["current-call"]
+    assert not store.discarded
+
+
+def test_earlier_requires_action_survives_later_idle(tmp_path) -> None:
+    executions = []
+    tool = FunctionTool(
+        "custom",
+        lambda value, _context: executions.append(value) or text_result("ok"),
+    )
+    runner = SessionToolRunner(
+        object(),
+        "session-1",
+        SessionToolRunnerOptions(
+            tools=ToolSet(),
+            tool_context=ToolContext(workdir=str(tmp_path)),
+            custom_tools={"custom": tool},
+            max_idle_seconds=60,
+        ),
+    )
+    runner._state.retry_send_event = lambda _event, _call_id: True
+
+    runner._state.process_listed_events(
+        [
+            Event(
+                id="use-1",
+                type="agent.custom_tool_use",
+                name="custom",
+                custom_tool_use_id="call-1",
+                input={"value": "one"},
+            ),
+            Event(
+                id="idle-1",
+                type="session.status_idle",
+                stop_reason={"type": "requires_action", "event_ids": ["use-1"]},
+            ),
+            Event(id="user-2", type="user.message", content=[]),
+            Event(
+                id="use-2",
+                type="agent.custom_tool_use",
+                name="custom",
+                custom_tool_use_id="call-2",
+                input={"value": "two"},
+            ),
+            Event(
+                id="idle-2",
+                type="session.status_idle",
+                stop_reason={"type": "requires_action", "event_ids": ["use-2"]},
+            ),
+        ],
+        reconcile=False,
+    )
+
+    _finish_execution(runner)
+    _finish_execution(runner)
+
+    assert executions == [{"value": "one"}, {"value": "two"}]
+
+
+def test_known_remote_blocker_does_not_trigger_sole_tool_fallback(tmp_path) -> None:
+    executions = []
+    tool = FunctionTool(
+        "local",
+        lambda _input, _context: executions.append(True) or text_result("ok"),
+    )
+    runner = SessionToolRunner(
+        object(),
+        "session-1",
+        SessionToolRunnerOptions(
+            tools=ToolSet(),
+            tool_context=ToolContext(workdir=str(tmp_path)),
+            custom_tools={"local": tool},
+            max_idle_seconds=60,
+        ),
+    )
+    runner._state.retry_send_event = lambda _event, _call_id: True
+
+    runner._state.process_listed_events(
+        [
+            Event(
+                id="local-use",
+                type="agent.custom_tool_use",
+                name="local",
+                custom_tool_use_id="local-call",
+                input={},
+            ),
+            Event(id="idle-end", type="session.status_idle", stop_reason={"type": "end_turn"}),
+            Event(id="running", type="session.status_running"),
+            Event(
+                id="remote-use",
+                type="agent.custom_tool_use",
+                name="remote",
+                custom_tool_use_id="remote-call",
+                session_thread_id="child",
+                input={},
+            ),
+            Event(
+                id="idle-requires-action",
+                type="session.status_idle",
+                stop_reason={"type": "requires_action", "event_ids": ["remote-use"]},
+            ),
+        ],
+        reconcile=True,
+    )
+
+    assert not executions
+    assert [result.tool_use_id for result in runner.results] == ["remote-call"]
+    assert runner.results[0].posted is False
+
+
+def test_running_status_clears_abandoned_pending_blockers(tmp_path) -> None:
+    executions = []
+    tool = FunctionTool(
+        "custom",
+        lambda _input, _context: executions.append(True) or text_result("ok"),
+    )
+    runner = SessionToolRunner(
+        object(),
+        "session-1",
+        SessionToolRunnerOptions(
+            tools=ToolSet(),
+            tool_context=ToolContext(workdir=str(tmp_path)),
+            custom_tools={"custom": tool},
+            max_idle_seconds=60,
+        ),
+    )
+    runner._state.retry_send_event = lambda _event, _call_id: True
+
+    runner._state.process_listed_events(
+        [
+            Event(
+                id="tool-use",
+                type="agent.custom_tool_use",
+                name="custom",
+                custom_tool_use_id="call-1",
+                input={},
+            ),
+            Event(
+                id="idle-requires-action",
+                type="session.status_idle",
+                stop_reason={"type": "requires_action", "event_ids": ["tool-use"]},
+            ),
+            Event(id="user-message", type="user.message", content=[]),
+            Event(id="running", type="session.status_running"),
+            Event(id="idle-end-turn", type="session.status_idle", stop_reason={"type": "end_turn"}),
+        ],
+        reconcile=True,
+    )
+
+    assert not executions
+    assert not runner._state.pending_blocking_event_ids
+    assert not runner._state.tool_use_call_id_by_event_id
+
+
+def test_later_idle_drops_unmatched_pending_blockers(tmp_path) -> None:
+    runner = SessionToolRunner(
+        object(),
+        "session-1",
+        SessionToolRunnerOptions(tools=ToolSet(), tool_context=ToolContext(workdir=str(tmp_path))),
+    )
+
+    runner._state.process_listed_events(
+        [
+            Event(
+                id="idle-requires-action",
+                type="session.status_idle",
+                stop_reason={"type": "requires_action", "event_ids": ["foreign-use"]},
+            ),
+            Event(id="running", type="session.status_running"),
+            Event(id="idle-end-turn", type="session.status_idle", stop_reason={"type": "end_turn"}),
+        ],
+        reconcile=True,
+    )
+
+    assert not runner._state.pending_blocking_event_ids
+
+
+def test_reconcile_records_external_tool_use_only_once(tmp_path) -> None:
+    runner = SessionToolRunner(
+        object(),
+        "session-1",
+        SessionToolRunnerOptions(tools=ToolSet(), tool_context=ToolContext(workdir=str(tmp_path))),
+    )
+    events = [
+        Event(
+            id="tool-use",
+            type="agent.custom_tool_use",
+            name="remote",
+            custom_tool_use_id="call-1",
+            input={},
+        ),
+        Event(
+            id="idle",
+            type="session.status_idle",
+            stop_reason={"type": "requires_action", "event_ids": ["tool-use"]},
+        ),
+    ]
+
+    for _ in range(4):
+        runner._state.process_listed_events(events, reconcile=True)
+
+    assert [result.tool_use_id for result in runner.results] == ["call-1"]
+
+
+def test_reconcile_records_pending_confirmation_tool_use_only_once(tmp_path) -> None:
+    runner = SessionToolRunner(
+        object(),
+        "session-1",
+        SessionToolRunnerOptions(
+            tools=ToolSet([FunctionTool("approval", lambda _input, _context: text_result("ok"))]),
+            tool_context=ToolContext(workdir=str(tmp_path)),
+        ),
+    )
+    events = [
+        Event(
+            id="tool-use",
+            type="agent.tool_use",
+            name="approval",
+            tool_use_id="call-1",
+            evaluated_permission="ask",
+            input={},
+        ),
+        Event(
+            id="idle",
+            type="session.status_idle",
+            stop_reason={"type": "requires_action", "event_ids": ["tool-use"]},
+        ),
+    ]
+
+    for _ in range(4):
+        runner._state.process_listed_events(events, reconcile=True)
+
+    assert [result.tool_use_id for result in runner.results] == ["call-1"]
+    assert runner.results[0].posted is False
+
+
+def test_failed_result_delivery_still_arms_idle_deadline(tmp_path) -> None:
+    executions = []
+    store = _RecordingStore()
+    tool = FunctionTool(
+        "custom",
+        lambda _input, _context: executions.append(True) or text_result("ok"),
+    )
+    runner = SessionToolRunner(
+        object(),
+        "session-1",
+        SessionToolRunnerOptions(
+            tools=ToolSet(),
+            tool_context=ToolContext(workdir=str(tmp_path)),
+            custom_tools={"custom": tool},
+            result_store=store,
+            max_idle_seconds=0.01,
+        ),
+    )
+    runner._state.retry_send_event = lambda _event, _call_id: False
+
+    runner._state.process_listed_events(
+        [
+            Event(
+                id="tool-use",
+                type="agent.custom_tool_use",
+                name="custom",
+                custom_tool_use_id="call-1",
+                input={},
+            ),
+            Event(
+                id="idle-requires-action",
+                type="session.status_idle",
+                stop_reason={"type": "requires_action", "event_ids": ["tool-use"]},
+            ),
+            Event(id="idle-end-turn", type="session.status_idle", stop_reason={"type": "end_turn"}),
+        ],
+        reconcile=True,
+    )
+    _finish_execution(runner)
+
+    assert executions == [True]
+    assert "call-1" in runner._state.pending_results
+    assert runner._state.idle_armed_at
+    time.sleep(0.02)
+    assert runner._state.idle_expired()
+
+
+def test_empty_ledger_replays_unresolved_tool_use(tmp_path) -> None:
+    executions = []
+    store = _RecordingStore()
+    tool = FunctionTool(
+        "custom",
+        lambda _input, _context: executions.append(True) or text_result("ok"),
+    )
+    runner = SessionToolRunner(
+        object(),
+        "session-1",
+        SessionToolRunnerOptions(
+            tools=ToolSet(),
+            tool_context=ToolContext(workdir=str(tmp_path)),
+            custom_tools={"custom": tool},
+            result_store=store,
+        ),
+    )
+    sent = []
+    runner._state.retry_send_event = lambda event, _call_id: sent.append(event) or True
+
+    runner._state.process_listed_events(
+        [
+            Event(id="running", type="session.status_running"),
+            Event(
+                id="sevt-use-1",
+                type="agent.custom_tool_use",
+                name="custom",
+                custom_tool_use_id="call-1",
+                input={},
+            ),
+            Event(
+                id="idle",
+                type="session.status_idle",
+                stop_reason={"type": "requires_action", "event_ids": ["sevt-use-1"]},
+            ),
+        ],
+        reconcile=True,
+    )
+    _finish_execution(runner)
+
+    assert executions == [True]
+    assert [event.custom_tool_use_id for event in sent] == ["call-1"]
+    assert store.marked == ["call-1"]
+
+
+def test_unmatched_requires_action_replays_sole_owned_tool(tmp_path) -> None:
+    executions = []
+    tool = FunctionTool(
+        "custom",
+        lambda _input, _context: executions.append(True) or text_result("ok"),
+    )
+    runner = SessionToolRunner(
+        object(),
+        "session-1",
+        SessionToolRunnerOptions(
+            tools=ToolSet(),
+            tool_context=ToolContext(workdir=str(tmp_path)),
+            custom_tools={"custom": tool},
+        ),
+    )
+    sent = []
+    runner._state.retry_send_event = lambda event, _call_id: sent.append(event) or True
+
+    runner._state.process_listed_events(
+        [
+            Event(
+                id="idle", type="session.status_idle", stop_reason={"type": "requires_action", "event_ids": ["opaque"]}
+            ),
+            Event(
+                id="sevt-use-1",
+                type="agent.custom_tool_use",
+                name="custom",
+                custom_tool_use_id="call-1",
+                input={},
+            ),
+            Event(id="running", type="session.status_running"),
+        ],
+        reconcile=True,
+    )
+    _finish_execution(runner)
+
+    assert executions == [True]
+    assert [event.custom_tool_use_id for event in sent] == ["call-1"]
+    assert not runner._state.requires_action_fallback
+
+
+def test_unmatched_requires_action_does_not_guess_among_multiple_tools(tmp_path) -> None:
+    executions = []
+    tool = FunctionTool(
+        "custom",
+        lambda _input, _context: executions.append(True) or text_result("ok"),
+    )
+    runner = SessionToolRunner(
+        object(),
+        "session-1",
+        SessionToolRunnerOptions(
+            tools=ToolSet(),
+            tool_context=ToolContext(workdir=str(tmp_path)),
+            custom_tools={"custom": tool},
+        ),
+    )
+    runner._state.retry_send_event = lambda _event, _call_id: True
+
+    runner._state.process_listed_events(
+        [
+            Event(id="running", type="session.status_running"),
+            Event(id="sevt-use-1", type="agent.custom_tool_use", name="custom", custom_tool_use_id="call-1", input={}),
+            Event(id="sevt-use-2", type="agent.custom_tool_use", name="custom", custom_tool_use_id="call-2", input={}),
+            Event(
+                id="idle", type="session.status_idle", stop_reason={"type": "requires_action", "event_ids": ["opaque"]}
+            ),
+        ],
+        reconcile=True,
+    )
+
+    assert not executions
+    assert not runner._state.requires_action_fallback
+
+
+def test_current_blocker_matches_event_id_to_tool_use_id(tmp_path) -> None:
+    executions = []
+    store = _RecordingStore()
+    tool = FunctionTool("custom", lambda _input, _context: executions.append(True) or text_result("ok"))
+    runner = SessionToolRunner(
+        object(),
+        "session-1",
+        SessionToolRunnerOptions(
+            tools=ToolSet(),
+            tool_context=ToolContext(workdir=str(tmp_path)),
+            custom_tools={"custom": tool},
+            result_store=store,
+        ),
+    )
+    sent = []
+    result = Event(type="user.custom_tool_result", custom_tool_use_id="call-1")
+    runner._state.pending_results["call-1"] = result
+    runner._state.recovered_results.add("call-1")
+    runner._state.retry_send_event = lambda event, _call_id: sent.append(event) or True
+
+    runner._state.process_listed_events(
+        [
+            Event(
+                id="sevt-use-1",
+                type="agent.custom_tool_use",
+                name="custom",
+                custom_tool_use_id="call-1",
+                input={},
+            ),
+            Event(
+                id="idle",
+                type="session.status_idle",
+                stop_reason={"type": "requires_action", "event_ids": ["sevt-use-1"]},
+            ),
+        ],
+        reconcile=True,
+    )
+
+    assert not executions
+    assert sent == [result]
+    assert store.marked == ["call-1"]
     assert not store.discarded
 
 

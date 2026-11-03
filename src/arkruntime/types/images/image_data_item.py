@@ -12,7 +12,9 @@ from arkruntime._models import BaseModel
 
 from .bounding_box import BoundingBox
 from .image_error import ImageError
+from .output_background import OutputBackground
 from .output_format import OutputFormat
+from .text_recognition import TextRecognition
 
 
 class ImageDataItem(BaseModel):
@@ -39,6 +41,14 @@ class ImageDataItem(BaseModel):
     output_format: Optional[OutputFormat] = None
     """
     Actual container/codec used for this image.
+    """
+    background: Optional[OutputBackground] = None
+    """
+    Actual output background.
+    """
+    text_recognition: Optional[TextRecognition] = None
+    """
+    Recognized text and styles for this layer.
     """
     z_index: Optional[int] = None
     """

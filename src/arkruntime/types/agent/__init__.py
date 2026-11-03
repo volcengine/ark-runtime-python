@@ -10,6 +10,12 @@ from .agent import Agent
 from .agent_ref import AgentRef
 from .agent_ref_type import AgentRefType
 from .agent_skill_ref import AgentSkillRef
+from .compact_threshold import CompactThreshold
+from .context_management_instructions import ContextManagementInstructions
+from .context_management_policies import ContextManagementPolicies
+from .context_management_policies_item import ContextManagementPoliciesItem
+from .context_management_policy import ContextManagementPolicy
+from .context_management_type import ContextManagementType
 from .create_agent_request import CreateAgentRequest
 from .custom_tool_input_schema import CustomToolInputSchema
 from .delete_agent_response import DeleteAgentResponse
@@ -19,6 +25,10 @@ from .mcp_server_type import MCPServerType
 from .model_config import ModelConfig
 from .model_speed import ModelSpeed
 from .multiagent_config import MultiagentConfig
+from .multiagent_feature_type import MultiagentFeatureType
+from .multiagent_inline_agents_config import MultiagentInlineAgentsConfig
+from .multiagent_patch import MultiagentPatch
+from .multiagent_subagents_config import MultiagentSubagentsConfig
 from .multiagent_type import MultiagentType
 from .permission_policy import PermissionPolicy
 from .permission_policy_type import PermissionPolicyType
@@ -35,6 +45,12 @@ __all__ = [
     "AgentRef",
     "AgentRefType",
     "AgentSkillRef",
+    "CompactThreshold",
+    "ContextManagementInstructions",
+    "ContextManagementPolicies",
+    "ContextManagementPoliciesItem",
+    "ContextManagementPolicy",
+    "ContextManagementType",
     "CreateAgentRequest",
     "CustomToolInputSchema",
     "DeleteAgentResponse",
@@ -44,6 +60,10 @@ __all__ = [
     "ModelConfig",
     "ModelSpeed",
     "MultiagentConfig",
+    "MultiagentFeatureType",
+    "MultiagentInlineAgentsConfig",
+    "MultiagentPatch",
+    "MultiagentSubagentsConfig",
     "MultiagentType",
     "PermissionPolicy",
     "PermissionPolicyType",
@@ -55,6 +75,30 @@ __all__ = [
     "ToolItem",
     "UpdateAgentRequest",
 ]
+from .agent_ref_param import AgentRefParam
+from .agent_skill_ref_param import AgentSkillRefParam
+from .compact_threshold_param import CompactThresholdParam
+from .context_management_instructions_param import ContextManagementInstructionsParam
+from .context_management_policies_item_param import ContextManagementPoliciesItemParam
+from .context_management_policies_param import ContextManagementPoliciesParam
+from .context_management_policy_param import ContextManagementPolicyParam
+from .context_management_type_param import ContextManagementTypeParam
+from .create_agent_request_param import CreateAgentRequestParam
+from .custom_tool_input_schema_param import CustomToolInputSchemaParam
+from .mcp_server_param import MCPServerParam
+from .mcp_server_type_param import MCPServerTypeParam
+from .model_config_param import ModelConfigParam
+from .multiagent_config_param import MultiagentConfigParam
+from .multiagent_inline_agents_config_param import MultiagentInlineAgentsConfigParam
+from .multiagent_patch_param import MultiagentPatchParam
+from .multiagent_subagents_config_param import MultiagentSubagentsConfigParam
+from .permission_policy_param import PermissionPolicyParam
+from .tag_param import TagParam
+from .token_limits_param import TokenLimitsParam
+from .tool_config_param import ToolConfigParam
+from .tool_default_config_param import ToolDefaultConfigParam
+from .tool_item_param import ToolItemParam
+from .update_agent_request_param import UpdateAgentRequestParam
 
 # Hand-written extras (preserved across regen via Makefile rsync --exclude=*_shim.py).
 from ._init_extras_shim import *  # noqa: F401,F403

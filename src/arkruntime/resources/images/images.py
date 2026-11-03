@@ -17,6 +17,7 @@ from ..._types import Body, Headers, Query
 from ...types.images.background import Background
 from ...types.images.image_generation_response import ImageGenerationResponse
 from ...types.images.image_generation_stream_event import ImageGenerationStreamEvent
+from ...types.images.layer_decomposition_options_param import LayerDecompositionOptionsParam
 from ...types.images.optimize_prompt_options_param import OptimizePromptOptionsParam
 from ...types.images.output_format import OutputFormat
 from ...types.images.response_format import ResponseFormat
@@ -37,6 +38,7 @@ class Images(SyncAPIResource):
         *,
         # AUTOGEN-START create-kwargs
         model: str,
+        safety_identifier: Optional[str] = None,
         prompt: Optional[str] = None,
         image: Optional[Union[str, List[str]]] = None,
         stream: Optional[bool] = None,
@@ -53,6 +55,7 @@ class Images(SyncAPIResource):
         output_format: Optional[OutputFormat] = None,
         background: Optional[Background] = None,
         layer_decomposition: Optional[bool] = None,
+        layer_decomposition_options: Optional[LayerDecompositionOptionsParam] = None,
         # AUTOGEN-END create-kwargs
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
@@ -64,6 +67,7 @@ class Images(SyncAPIResource):
             body={
                 # AUTOGEN-START create-body
                 "model": model,
+                "safety_identifier": safety_identifier,
                 "prompt": prompt,
                 "image": image,
                 "stream": stream,
@@ -80,6 +84,7 @@ class Images(SyncAPIResource):
                 "output_format": output_format,
                 "background": background,
                 "layer_decomposition": layer_decomposition,
+                "layer_decomposition_options": layer_decomposition_options,
                 # AUTOGEN-END create-body
             },
             options=make_request_options(
@@ -100,6 +105,7 @@ class AsyncImages(AsyncAPIResource):
         *,
         # AUTOGEN-START create-kwargs
         model: str,
+        safety_identifier: Optional[str] = None,
         prompt: Optional[str] = None,
         image: Optional[Union[str, List[str]]] = None,
         stream: Optional[bool] = None,
@@ -116,6 +122,7 @@ class AsyncImages(AsyncAPIResource):
         output_format: Optional[OutputFormat] = None,
         background: Optional[Background] = None,
         layer_decomposition: Optional[bool] = None,
+        layer_decomposition_options: Optional[LayerDecompositionOptionsParam] = None,
         # AUTOGEN-END create-kwargs
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
@@ -127,6 +134,7 @@ class AsyncImages(AsyncAPIResource):
             body={
                 # AUTOGEN-START create-body
                 "model": model,
+                "safety_identifier": safety_identifier,
                 "prompt": prompt,
                 "image": image,
                 "stream": stream,
@@ -143,6 +151,7 @@ class AsyncImages(AsyncAPIResource):
                 "output_format": output_format,
                 "background": background,
                 "layer_decomposition": layer_decomposition,
+                "layer_decomposition_options": layer_decomposition_options,
                 # AUTOGEN-END create-body
             },
             options=make_request_options(
