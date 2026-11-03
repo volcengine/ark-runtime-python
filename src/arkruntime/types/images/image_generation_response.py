@@ -21,6 +21,10 @@ class ImageGenerationResponse(BaseModel):
     """
     Model that produced the result.
     """
+    safety_identifier: Optional[str] = None
+    """
+    Echoed safety identifier.
+    """
     created: int
     """
     Unix timestamp (seconds) when the response was produced.

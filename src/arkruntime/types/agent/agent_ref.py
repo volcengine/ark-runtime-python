@@ -12,6 +12,7 @@ from arkruntime._models import BaseModel
 
 from .agent_ref_type import AgentRefType
 from .agent_skill_ref import AgentSkillRef
+from .context_management_policies_item import ContextManagementPoliciesItem
 from .mcp_server import MCPServer
 from .model_config import ModelConfig
 from .tool_item import ToolItem
@@ -61,6 +62,10 @@ class AgentRef(BaseModel):
     skills: Optional[List[AgentSkillRef]] = None
     """
     Session 响应中冻结的成员 Agent skills。
+    """
+    context_management: Optional[ContextManagementPoliciesItem] = None
+    """
+    Session 响应中冻结的成员 Agent 上下文管理策略。
     """
     display_name: Optional[str] = None
     """

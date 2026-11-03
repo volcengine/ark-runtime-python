@@ -11,6 +11,7 @@ from typing import List, Optional, Union
 from arkruntime._models import BaseModel
 
 from .background import Background
+from .layer_decomposition_options import LayerDecompositionOptions
 from .optimize_prompt_options import OptimizePromptOptions
 from .output_format import OutputFormat
 from .response_format import ResponseFormat
@@ -23,6 +24,11 @@ class CreateImageGenerationRequest(BaseModel):
     model: str
     """
     The model identifier to use.
+    """
+    safety_identifier: Optional[str] = None
+    """
+    Stable, unique end-user identifier for safety and abuse tracing.
+    Hash usernames, email addresses, or internal user IDs before sending to protect privacy.
     """
     prompt: Optional[str] = None
     """
@@ -54,7 +60,7 @@ class CreateImageGenerationRequest(BaseModel):
     """
     size: Optional[str] = None
     """
-    Output size hint (e.g. `1024x1024`, `1K`, `2K`, or `auto`). `auto` is supported for layer decomposition.
+    Output size, such as `1024x1024`, `0.5K`, `1K`, `1.5K`, `2K`, `3K`, or `auto`.
     """
     watermark: Optional[bool] = None
     """
@@ -80,14 +86,18 @@ class CreateImageGenerationRequest(BaseModel):
     """
     output_format: Optional[OutputFormat] = None
     """
-    Container/codec for the generated image bytes.
+    Output image format.
     """
     background: Optional[Background] = None
     """
-    Output background. Defaults to `opaque`. `transparent` requires exactly one PNG reference image with an alpha channel and PNG output.
+    Requested background type.
     """
     layer_decomposition: Optional[bool] = None
     """
     Decompose one reference image into a base image and independently
     composable layers. Supported models return layer metadata in `data`.
+    """
+    layer_decomposition_options: Optional[LayerDecompositionOptions] = None
+    """
+    Layer count and OCR options.
     """

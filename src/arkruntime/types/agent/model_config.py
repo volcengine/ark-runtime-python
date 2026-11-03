@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from arkruntime._models import BaseModel
 
@@ -46,4 +46,30 @@ class ModelConfig(BaseModel):
     reasoning_effort: Optional[str] = None
     """
     推理努力程度。
+    """
+    service_tier: Optional[str] = None
+    """
+    服务档位。
+    """
+    base_url: Optional[str] = None
+    """
+    自定义模型接入点 base URL。
+
+    配合非 `ark` 的 `provider` 使用。非 `ark` provider 必须提供本字段与
+    `token_limits`；`ark` provider 指定本字段返回 400。
+    """
+    protocol: Optional[str] = None
+    """
+    模型接入协议。
+
+    取值须命中服务端维护的接入协议白名单，非法值返回 400。
+    """
+    headers: Optional[Dict[str, str]] = None
+    """
+    模型静态请求 header。
+
+    仅用于非认证类静态 header，例如 `X-Trial-Id`。`Authorization` /
+    `X-Api-Key` 等认证 header 不得写入本字段，必须由 SendEvent 请求上的
+    `X-User-Model-Header-*` 动态提供。服务端对历史请求的兼容行为不构成新
+    客户端可依赖的公开能力。
     """

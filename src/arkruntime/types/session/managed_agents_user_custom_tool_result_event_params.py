@@ -39,6 +39,13 @@ class ManagedAgentsUserCustomToolResultEventParams(BaseModel):
     """
     session_thread_id: Optional[str] = None
     """
-    目标 session_thread_id。
+    目标 session_thread_id；可选，且不要求客户端回填。
+
+    缺省（字段缺失或空串）不是错误：服务端按 `custom_tool_use_id` 反查该次工具
+    调用的权威归属 thread（multi-agent 下可能是子 thread），把结果路由回它。显式
+    传入时必须与服务端反查结果一致，不一致是 typed error。
+
+    self-hosted 宿主按事件投递顺序串行执行工具，不需要 thread 身份，正确路由不依赖
+    本字段。
     """
     type: Literal["user.custom_tool_result"]

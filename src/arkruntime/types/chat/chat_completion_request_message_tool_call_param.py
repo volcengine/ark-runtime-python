@@ -17,7 +17,7 @@ from .tool_type_param import ToolTypeParam
 
 
 class ChatCompletionRequestMessageToolCallParam(TypedDict, total=False):
-    id: Optional[Optional[str]]
+    id: Optional[str]
     """
     The ID of the tool call. Missing or null IDs are normalized to an
     empty string.

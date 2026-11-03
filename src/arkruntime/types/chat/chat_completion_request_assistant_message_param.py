@@ -20,13 +20,13 @@ class ChatCompletionRequestAssistantMessageParam(TypedDict, total=False):
     role: Required[Literal["assistant"]]
     """The role of the messages author. Always `assistant`."""
 
-    content: Optional[Optional[ChatCompletionMessageContentParam]]
+    content: Optional[ChatCompletionMessageContentParam]
     """
     The contents of the assistant message. Missing, null, or empty content
     is normalized to an empty string, including when no tools are called.
     """
 
-    reasoning_content: Optional[Optional[ChatCompletionMessageContentParam]]
+    reasoning_content: Optional[ChatCompletionMessageContentParam]
     """The reasoning content emitted by the assistant alongside `content`."""
 
     encrypted_content: Optional[str]

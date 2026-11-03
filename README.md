@@ -319,6 +319,21 @@ See the [examples/](./examples) directory for runnable scripts:
 
 MCP examples are provided for both clouds and explicitly send `ark-beta-mcp: true`. Other built-in-tool examples are CN-only and show their required beta headers.
 
+## Managed Agents multiagent updates
+
+`MultiagentType` is a string enum. Its wire value remains `coordinator` or
+`multiagent_20261001`, while `str(config.type)` includes the enum class name.
+Use `.value` when an application needs the wire string.
+
+`MultiagentConfig` represents Create and Response values, while
+`MultiagentPatch` represents Update fields: `coordinator` uses `agents` and
+`multiagent_20261001` uses `subagents`. The patch model separately represents
+omitted and explicit-null values.
+
+When updating an Agent, omit `multiagent` to leave the topology unchanged, pass
+`multiagent=None` to remove it, or pass `agents=[]` to clear a coordinator's
+agent roster.
+
 ## Self-hosted MCP tools
 
 The self-hosted worker core exposes a protocol-independent `MCPClient`
@@ -335,6 +350,15 @@ the same AnyIO lifecycle, then use `custom_tool_items()` for the Agent
 declaration and `mcp_tools()` for the worker registry. Keep both alive for the
 entire worker lifetime. See the runnable
 [`self_hosted_mcp_worker`](./examples/self_hosted_mcp_worker) example.
+
+`EnvironmentWorkerOptions` exposes `prefer_stream` and
+`stream_timeout_seconds`; the defaults remain stream mode. The timeout is applied
+to httpx connect/read phases, so a stream that receives no bytes for 30 seconds
+reconnects rather than expiring after 30 seconds in total. Worker logs record
+stream connection attempts, the first business event, session status
+transitions, reconnects, and a warning when a running session has made no
+business progress for 60 seconds. Periodic `span.*` events do not count as
+business progress. These logs do not add an automatic progress timeout.
 
 The adapter wraps an already connected MCP `ClientSession`, so applications may
 use stdio or another transport supported by their MCP client. One client

@@ -16,7 +16,7 @@ from .tool_search_execution import ToolSearchExecution
 class ToolSearchToolParam(TypedDict, total=False):
     type: Required[Literal["tool_search"]]
 
-    execution: Optional[Optional[ToolSearchExecution]]
+    execution: Optional[ToolSearchExecution]
     """Omitted, null or empty means server. Client execution uses full-schema fallback."""
 
     description: Optional[str]

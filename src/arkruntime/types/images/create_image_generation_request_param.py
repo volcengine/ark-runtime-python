@@ -11,6 +11,7 @@ from typing import List, Optional, Union
 from typing_extensions import Required, TypedDict
 
 from .background import Background
+from .layer_decomposition_options_param import LayerDecompositionOptionsParam
 from .optimize_prompt_options_param import OptimizePromptOptionsParam
 from .output_format import OutputFormat
 from .response_format import ResponseFormat
@@ -24,6 +25,12 @@ from .tool_param import ToolParam
 class CreateImageGenerationRequestParam(TypedDict, total=False):
     model: Required[str]
     """The model identifier to use."""
+
+    safety_identifier: Optional[str]
+    """
+    Stable, unique end-user identifier for safety and abuse tracing.
+    Hash usernames, email addresses, or internal user IDs before sending to protect privacy.
+    """
 
     prompt: Optional[str]
     """Text prompt describing the desired image. Required for standard generation; may be omitted for automatic layer decomposition when `layer_decomposition=true`."""
@@ -47,7 +54,7 @@ class CreateImageGenerationRequestParam(TypedDict, total=False):
     """Classifier-free guidance scale for reference images (edit / R2I)."""
 
     size: Optional[str]
-    """Output size hint (e.g. `1024x1024`, `1K`, `2K`, or `auto`). `auto` is supported for layer decomposition."""
+    """Output size, such as `1024x1024`, `0.5K`, `1K`, `1.5K`, `2K`, `3K`, or `auto`."""
 
     watermark: Optional[bool]
     """Embed a watermark in the generated image."""
@@ -65,13 +72,16 @@ class CreateImageGenerationRequestParam(TypedDict, total=False):
     """Tools the model may invoke during generation."""
 
     output_format: Optional[OutputFormat]
-    """Container/codec for the generated image bytes."""
+    """Output image format."""
 
     background: Optional[Background]
-    """Output background. Defaults to `opaque`. `transparent` requires exactly one PNG reference image with an alpha channel and PNG output."""
+    """Requested background type."""
 
     layer_decomposition: Optional[bool]
     """
     Decompose one reference image into a base image and independently
     composable layers. Supported models return layer metadata in `data`.
     """
+
+    layer_decomposition_options: Optional[LayerDecompositionOptionsParam]
+    """Layer count and OCR options."""

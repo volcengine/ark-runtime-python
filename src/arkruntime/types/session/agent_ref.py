@@ -10,6 +10,7 @@ from typing import Dict, List, Optional
 
 from arkruntime._models import BaseModel
 
+from .agent_context_management_policies import AgentContextManagementPolicies
 from .model_overrides import ModelOverrides
 
 
@@ -50,6 +51,11 @@ class AgentRef(BaseModel):
     multiagent: Optional[Dict[str, object]] = None
     """
     多 Agent 配置覆写。
+    """
+    context_management: Optional[AgentContextManagementPolicies] = None
+    """
+    上下文管理策略覆写（整体替换）。省略或 null 表示继承；显式 [] 表示清除
+    自定义策略，随后由运行时使用默认行为。
     """
     display_name: Optional[str] = None
     """

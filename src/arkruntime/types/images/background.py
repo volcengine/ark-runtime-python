@@ -14,5 +14,6 @@ class Background(str, Enum):
     Background of the generated image.
     """
 
+    auto = "auto"
     opaque = "opaque"
     transparent = "transparent"

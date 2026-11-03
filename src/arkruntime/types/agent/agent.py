@@ -11,6 +11,7 @@ from typing import Dict, List, Literal, Optional
 from arkruntime._models import BaseModel
 
 from .agent_skill_ref import AgentSkillRef
+from .context_management_policies import ContextManagementPolicies
 from .mcp_server import MCPServer
 from .model_config import ModelConfig
 from .multiagent_config import MultiagentConfig
@@ -79,6 +80,14 @@ class Agent(BaseModel):
     display_name: Optional[str] = None
     """
     展示名。
+    """
+    context_management: Optional[ContextManagementPolicies] = None
+    """
+    上下文管理策略。服务端可能在公开响应中补展示默认；该默认不代表用户已显式配置。
+    """
+    archived_at: Optional[str] = None
+    """
+    首次归档时间（RFC 3339），只读；未归档时省略。归档作用于资源 ID。
     """
     created_at: str
     """

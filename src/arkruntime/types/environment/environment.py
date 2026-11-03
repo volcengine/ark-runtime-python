@@ -47,6 +47,10 @@ class Environment(BaseModel):
     """
     一期未启用；仅协议占位。
     """
+    archived_at: Optional[str] = None
+    """
+    首次归档时间（RFC 3339），只读；未归档时省略。归档作用于资源 ID。
+    """
     created_at: str
     """
     RFC 3339 时间。

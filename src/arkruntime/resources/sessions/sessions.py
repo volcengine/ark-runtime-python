@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import List, Optional
+from urllib.parse import quote
 
 from ..._base_client import make_request_options
 from ..._compat import cached_property
@@ -30,6 +31,7 @@ _PREFIX = "/sessions"
 
 def _list_query(
     *,
+    include_archived: bool | NotGiven = NOT_GIVEN,
     agent_id=NOT_GIVEN,
     agent_version=NOT_GIVEN,
     created_at_gt=NOT_GIVEN,
@@ -58,6 +60,8 @@ def _list_query(
     }.items():
         if v is not NOT_GIVEN and v is not None:
             q[k] = v
+    if include_archived is not NOT_GIVEN and include_archived is not None:
+        q["include_archived"] = include_archived
     return q
 
 
@@ -133,6 +137,7 @@ class Sessions(SyncAPIResource):
     def list(
         self,
         *,
+        include_archived: bool | NotGiven = NOT_GIVEN,
         agent_id=NOT_GIVEN,
         agent_version=NOT_GIVEN,
         created_at_gt=NOT_GIVEN,
@@ -153,6 +158,7 @@ class Sessions(SyncAPIResource):
             _PREFIX,
             options=make_request_options(
                 query=_list_query(
+                    include_archived=include_archived,
                     agent_id=agent_id,
                     agent_version=agent_version,
                     created_at_gt=created_at_gt,
@@ -250,6 +256,18 @@ class Sessions(SyncAPIResource):
             cast_to=DeleteSessionResponse,
         )
 
+    def archive(self, session_id: str, *, extra_headers=None, extra_query=None, timeout=None) -> Session:
+        """Archive this session; the POST has no request body."""
+        if not session_id:
+            raise ValueError("session_id is required")
+        return self._post(
+            f"{_PREFIX}/{quote(session_id, safe='')}/archive",
+            # Raw empty bytes bypass the client's default empty JSON object.
+            body=b"",  # type: ignore[arg-type]
+            options=make_request_options(extra_headers=extra_headers, extra_query=extra_query, timeout=timeout),
+            cast_to=Session,
+        )
+
 
 class AsyncSessions(AsyncAPIResource):
     @cached_property
@@ -316,6 +334,7 @@ class AsyncSessions(AsyncAPIResource):
     async def list(
         self,
         *,
+        include_archived: bool | NotGiven = NOT_GIVEN,
         agent_id=NOT_GIVEN,
         agent_version=NOT_GIVEN,
         created_at_gt=NOT_GIVEN,
@@ -336,6 +355,7 @@ class AsyncSessions(AsyncAPIResource):
             _PREFIX,
             options=make_request_options(
                 query=_list_query(
+                    include_archived=include_archived,
                     agent_id=agent_id,
                     agent_version=agent_version,
                     created_at_gt=created_at_gt,
@@ -431,4 +451,16 @@ class AsyncSessions(AsyncAPIResource):
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
             cast_to=DeleteSessionResponse,
+        )
+
+    async def archive(self, session_id: str, *, extra_headers=None, extra_query=None, timeout=None) -> Session:
+        """Archive this session; the POST has no request body."""
+        if not session_id:
+            raise ValueError("session_id is required")
+        return await self._post(
+            f"{_PREFIX}/{quote(session_id, safe='')}/archive",
+            # Raw empty bytes bypass the client's default empty JSON object.
+            body=b"",  # type: ignore[arg-type]
+            options=make_request_options(extra_headers=extra_headers, extra_query=extra_query, timeout=timeout),
+            cast_to=Session,
         )

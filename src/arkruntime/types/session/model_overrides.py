@@ -61,8 +61,12 @@ class ModelOverrides(BaseModel):
     """
     headers: Optional[Dict[str, str]] = None
     """
-    自定义模型请求 header（整组覆写），例如 `Authorization` 或
-    `X-Trial-Id`；key / value 均为字符串。
+    自定义模型请求 header（整组覆写），例如 `X-Trial-Id`；key / value 均为
+    字符串。
+
+    新接入只允许非认证类静态 header。认证 header 必须通过 SendEvent 请求上的
+    `X-User-Model-Header-*` 按请求提供，不得写入本字段。服务端对历史请求的
+    兼容行为不构成新客户端可依赖的公开能力。
     """
     token_limits: Optional[OverrideTokenLimits] = None
     """

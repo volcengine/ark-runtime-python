@@ -22,7 +22,7 @@ class ItemToolSearchOutputParam(TypedDict, total=False):
 
     status: Optional[ItemStatus]
 
-    call_id: Optional[Optional[str]]
+    call_id: Optional[str]
     """Hosted search emits null. Replayed hosted history must omit this field or set it to null."""
 
     execution: Optional[ToolSearchExecution]
