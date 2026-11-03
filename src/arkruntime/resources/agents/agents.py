@@ -15,6 +15,7 @@ from ...types.agent.list_agents_response import ListAgentsResponse
 from ...types.agent.mcp_server import MCPServer
 from ...types.agent.model_config import ModelConfig
 from ...types.agent.multiagent_config import MultiagentConfig
+from ...types.agent.multiagent_patch import MultiagentPatch
 from ...types.agent.tag import Tag
 from ...types.agent.tool_item import ToolItem
 
@@ -42,6 +43,14 @@ def _list_query(
     return q
 
 
+def _validate_create_multiagent(
+    multiagent: MultiagentConfig | NotGiven | None,
+) -> MultiagentConfig | NotGiven | None:
+    if multiagent is NOT_GIVEN or multiagent is None:
+        return multiagent
+    return MultiagentConfig.model_validate(multiagent)
+
+
 class Agents(SyncAPIResource):
     def create(
         self,
@@ -61,6 +70,7 @@ class Agents(SyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None = None,
     ) -> Agent:
+        multiagent = _validate_create_multiagent(multiagent)
         return self._post(
             _PREFIX,
             body=dump_body(
@@ -151,7 +161,7 @@ class Agents(SyncAPIResource):
         mcp_servers: Optional[List[MCPServer]] | NotGiven = NOT_GIVEN,
         tools: Optional[List[ToolItem]] | NotGiven = NOT_GIVEN,
         skills: Optional[List[AgentSkillRef]] | NotGiven = NOT_GIVEN,
-        multiagent: Optional[MultiagentConfig] | NotGiven = NOT_GIVEN,
+        multiagent: Optional[MultiagentPatch] | NotGiven = NOT_GIVEN,
         metadata: Optional[dict] | NotGiven = NOT_GIVEN,
         extra_headers=None,
         extra_query=None,
@@ -241,6 +251,7 @@ class AsyncAgents(AsyncAPIResource):
         extra_body=None,
         timeout=None,
     ) -> Agent:
+        multiagent = _validate_create_multiagent(multiagent)
         return await self._post(
             _PREFIX,
             body=dump_body(

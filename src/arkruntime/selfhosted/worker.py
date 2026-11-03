@@ -212,6 +212,8 @@ class EnvironmentWorkerOptions:
     custom_tools: Dict[str, Tool] = field(default_factory=dict)
     logger: logging.Logger = logging.getLogger("arkruntime.selfhosted.environment_worker")
     tool_timeout_seconds: Optional[float] = None
+    prefer_stream: bool = True
+    stream_timeout_seconds: float = 30.0
 
 
 class EnvironmentWorker:
@@ -309,8 +311,11 @@ class EnvironmentWorker:
                     result_store=store,
                     max_idle_seconds=self.options.max_idle_seconds,
                     tool_timeout_seconds=self.options.tool_timeout_seconds,
+                    prefer_stream=self.options.prefer_stream,
+                    stream_timeout_seconds=self.options.stream_timeout_seconds,
                     stop_event=work_stop,
                     logger=self.options.logger,
+                    initial_session_status=str(session.raw.get("status") or ""),
                 ),
             )
             runner.run()

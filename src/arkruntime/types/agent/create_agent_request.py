@@ -21,6 +21,8 @@ from .tool_item import ToolItem
 class CreateAgentRequest(BaseModel):
     """
     创建 Agent 的请求体。
+
+    multiagent_20261001 必须携带非 null 的 subagents；该条件由服务端校验。
     """
 
     name: str
@@ -57,7 +59,7 @@ class CreateAgentRequest(BaseModel):
     """
     multiagent: Optional[MultiagentConfig] = None
     """
-    多 Agent 编排拓扑。
+    多 Agent 编排拓扑。multiagent_20261001 时 subagents 必填且不能为 null。
     """
     metadata: Optional[Dict[str, str]] = None
     """

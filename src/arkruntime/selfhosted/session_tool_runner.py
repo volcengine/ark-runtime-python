@@ -52,6 +52,7 @@ from .types import (
 STREAM_BACKOFF_START = 0.5
 STREAM_BACKOFF_CAP = 10.0
 STREAM_HEALTHY_AFTER = 30.0
+STREAM_PROGRESS_WARN_SECONDS = 60.0
 SEND_RETRIES = 3
 STREAM_QUEUE_SIZE = 256
 
@@ -98,6 +99,7 @@ class SessionToolRunnerOptions:
     stop_event: Any = None
     logger: logging.Logger = logging.getLogger("arkruntime.selfhosted.session_tool_runner")
     on_tool_error: Any = None
+    initial_session_status: str = ""
 
 
 @dataclass
@@ -149,6 +151,15 @@ class SessionToolRunner:
         return self._stop.is_set() or bool(self.options.stop_event and self.options.stop_event.is_set())
 
     def run(self) -> List[ToolCallResult]:
+        mode = "stream" if self.options.prefer_stream and hasattr(self.api, "stream_events") else "list"
+        self.options.logger.info(
+            "session runner started session_id=%s work_id=%s mode=%s max_idle_seconds=%s stream_timeout_seconds=%.3fs",
+            self.session_id,
+            self.options.work_id,
+            mode,
+            self.options.max_idle_seconds,
+            self.options.stream_timeout_seconds,
+        )
         try:
             if self.options.result_store is not None:
                 pending, processed = self.options.result_store.recover()
@@ -161,7 +172,11 @@ class SessionToolRunner:
                     self._consume_stream_loop()
                     return self._results
                 except EventStreamUnsupported:
-                    pass
+                    mode = "list"
+                    self.options.logger.info(
+                        "session stream unsupported session_id=%s falling_back=list",
+                        self.session_id,
+                    )
                 except (IdleTimeout, SessionTerminated):
                     raise
                 except Exception:
@@ -172,19 +187,38 @@ class SessionToolRunner:
             return self._results
         finally:
             self._state.cancel_active_execution()
+            self.options.logger.info(
+                "session runner stopped session_id=%s work_id=%s mode=%s events=%d stream_attempts=%d",
+                self.session_id,
+                self.options.work_id,
+                mode,
+                self._state.event_count,
+                self._state.stream_attempts,
+            )
 
     def _consume_stream_loop(self) -> None:
         backoff = STREAM_BACKOFF_START
         while not self._is_stopped():
+            self._state.stream_attempts += 1
+            attempt = self._state.stream_attempts
+            self.options.logger.info(
+                "session stream connecting session_id=%s work_id=%s attempt=%d timeout=%.3fs",
+                self.session_id,
+                self.options.work_id,
+                attempt,
+                self.options.stream_timeout_seconds,
+            )
             event_queue: "queue.Queue[object]" = queue.Queue(maxsize=STREAM_QUEUE_SIZE)
             opened_at = time.monotonic()
             pump = threading.Thread(target=self._pump_stream, args=(event_queue,), daemon=True)
             pump.start()
             self._state.reconcile()
+            reconnect_error: Optional[BaseException] = None
             while not self._is_stopped() and (pump.is_alive() or not event_queue.empty()):
                 self._state.drain_execution_done()
                 self._state.flush_results()
                 self._raise_if_idle_expired()
+                self._state.maybe_log_no_progress()
                 try:
                     item = event_queue.get(timeout=self._state.next_wait_seconds(0.5))
                 except queue.Empty:
@@ -196,9 +230,30 @@ class SessionToolRunner:
                         raise item
                     if is_fatal_4xx(item):
                         raise item
+                    reconnect_error = item
                     break
                 self._state.handle_stream_event(item)  # type: ignore[arg-type]
-            self._sleep_or_idle(_jitter(backoff))
+            if self._is_stopped():
+                return
+            reconnect_in = _jitter(backoff)
+            if reconnect_error is None:
+                self.options.logger.info(
+                    "session stream ended session_id=%s work_id=%s attempt=%d reconnect_in=%.3fs",
+                    self.session_id,
+                    self.options.work_id,
+                    attempt,
+                    reconnect_in,
+                )
+            else:
+                self.options.logger.warning(
+                    "session stream disconnected session_id=%s work_id=%s attempt=%d reconnect_in=%.3fs err=%s",
+                    self.session_id,
+                    self.options.work_id,
+                    attempt,
+                    reconnect_in,
+                    reconnect_error,
+                )
+            self._sleep_or_idle(reconnect_in)
             backoff = min(backoff * 2, STREAM_BACKOFF_CAP)
 
     def _pump_stream(self, event_queue: "queue.Queue[object]") -> None:
@@ -233,6 +288,7 @@ class SessionToolRunner:
             self._state.reconcile(reconcile=False)
             self._state.flush_results()
             self._raise_if_idle_expired()
+            self._state.maybe_log_no_progress()
             self._sleep_or_idle(self.options.event_poll_interval_seconds)
 
     def _sleep_or_idle(self, seconds: float) -> None:
@@ -240,6 +296,7 @@ class SessionToolRunner:
         while not self._is_stopped():
             self._state.drain_execution_done()
             self._raise_if_idle_expired()
+            self._state.maybe_log_no_progress()
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 return
@@ -258,6 +315,13 @@ class _RunnerState:
     def __init__(self, runner: SessionToolRunner) -> None:
         self.runner = runner
         self.page = runner.options.event_page
+        self.event_count = 0
+        self.business_event_count = 0
+        self.stream_attempts = 0
+        self.session_status = runner.options.initial_session_status.strip().lower()
+        self.last_event_at = time.monotonic()
+        self.last_business_event_at = time.monotonic()
+        self.last_progress_warning_at = 0.0
         self.processed: Dict[str, bool] = {}
         self.seen: Dict[str, bool] = {}
         self.answered: Dict[str, bool] = {}
@@ -266,7 +330,9 @@ class _RunnerState:
         self.pending_ask: Dict[str, Event] = {}
         self.confirmations: Dict[str, Event] = {}
         self.external_tools: Dict[str, Event] = {}
+        self.unposted_tool_use_results: Set[str] = set()
         self.tool_use_events: Dict[str, Event] = {}
+        self.tool_use_call_id_by_event_id: Dict[str, str] = {}
         self.scheduled: Set[str] = set()
         self.execution_queue: Deque[_PendingToolEvent] = deque()
         self.active_execution: Optional[_ActiveToolExecution] = None
@@ -274,6 +340,8 @@ class _RunnerState:
         self.session_tool_uses: Set[str] = set()
         self.tool_uses_since_status: Set[str] = set()
         self.blocking_event_ids: Set[str] = set()
+        self.pending_blocking_event_ids: Set[str] = set()
+        self.requires_action_fallback: Set[str] = set()
         self.blocking_events_known = False
         self.idle_armed_at = 0.0
         self.idle_arm_pending = False
@@ -344,6 +412,7 @@ class _RunnerState:
                     pending_ids[call_id] = True
             elif event.type in (EVENT_TYPE_SESSION_STATUS_TERMINATED, EVENT_TYPE_SESSION_DELETED):
                 raise SessionTerminated("session terminated")
+        self.reconcile_unmatched_requires_action()
         self.reconcile_recovered_results()
         if touched_idle:
             self.disarm_idle()
@@ -394,11 +463,44 @@ class _RunnerState:
         if self.seen.get(key):
             return False
         self.seen[key] = True
+        self.record_event(event)
         return True
+
+    def record_event(self, event: Event) -> None:
+        self.event_count += 1
+        now = time.monotonic()
+        self.last_event_at = now
+        is_business_event = not event.type.startswith("span.")
+        if is_business_event:
+            self.business_event_count += 1
+            self.last_business_event_at = now
+            self.last_progress_warning_at = 0.0
+        if self.business_event_count == 1:
+            self.runner.options.logger.info(
+                "session first business event session_id=%s work_id=%s event_type=%s event_id=%s",
+                self.runner.session_id,
+                self.runner.options.work_id,
+                event.type,
+                event.id,
+            )
+        else:
+            self.runner.options.logger.debug(
+                "session event received session_id=%s work_id=%s event_type=%s event_id=%s",
+                self.runner.session_id,
+                self.runner.options.work_id,
+                event.type,
+                event.id,
+            )
 
     def mark_answered(self, call_id: str) -> None:
         if not call_id:
             return
+        event = self.tool_use_events.get(call_id)
+        if event is not None and event.id:
+            self.pending_blocking_event_ids.discard(event.id)
+            self.tool_use_call_id_by_event_id.pop(event.id, None)
+        self.requires_action_fallback.discard(call_id)
+        self.pending_blocking_event_ids.discard(call_id)
         self.answered[call_id] = True
         self.processed[call_id] = True
         self.pending_results.pop(call_id, None)
@@ -435,12 +537,15 @@ class _RunnerState:
         if not self.owns_tool(event, custom):
             self.external_tools[call_id] = event
             self.maybe_arm_pending_idle()
-            self.runner._results.append(ToolCallResult(call_id, event.name, custom, posted=False, event=event))
+            self.record_unposted_tool_use_result_once(call_id, event, custom)
             return
         confirmation, allowed = self.permission_allows(event, custom, call_id)
         if not allowed:
-            self.runner._results.append(
-                ToolCallResult(call_id, event.name, custom, confirmation=confirmation, posted=False, event=event)
+            self.record_unposted_tool_use_result_once(
+                call_id,
+                event,
+                custom,
+                confirmation=confirmation,
             )
             return
         if self.runner.options.result_store is not None:
@@ -455,6 +560,23 @@ class _RunnerState:
         self.scheduled.add(call_id)
         self.execution_queue.append(_PendingToolEvent(event, custom, confirmation))
         self.start_next_tool_execution()
+
+    def record_unposted_tool_use_result_once(
+        self, call_id: str, event: Event, custom: bool, confirmation: str = ""
+    ) -> None:
+        if call_id in self.unposted_tool_use_results:
+            return
+        self.unposted_tool_use_results.add(call_id)
+        self.runner._results.append(
+            ToolCallResult(
+                tool_use_id=call_id,
+                name=event.name,
+                custom=custom,
+                confirmation=confirmation,
+                posted=False,
+                event=event,
+            )
+        )
 
     def start_next_tool_execution(self) -> None:
         if self.active_execution is not None:
@@ -658,6 +780,7 @@ class _RunnerState:
                 result=out,
             )
         )
+        self.maybe_arm_pending_idle()
 
     def retry_send_event(self, event: Event, call_id: str) -> bool:
         last_exc: Optional[BaseException] = None
@@ -700,30 +823,149 @@ class _RunnerState:
                 self.session_tool_uses.add(call_id)
                 if not self.is_answered(call_id):
                     self.tool_use_events[call_id] = event
+                    if event.id:
+                        self.tool_use_call_id_by_event_id[event.id] = call_id
                 self.tool_uses_since_status.add(call_id)
             return
         if event.type == EVENT_TYPE_SESSION_STATUS_IDLE:
+            self.set_session_status("idle", event)
             self.blocking_events_known = True
             self.blocking_event_ids = set()
             if event.stop_reason_type() == SESSION_STOP_REASON_REQUIRES_ACTION:
-                self.blocking_event_ids.update(event.stop_reason_event_ids())
+                event_ids = set(event.stop_reason_event_ids())
+                self.blocking_event_ids.update(event_ids)
+                self.pending_blocking_event_ids.update(event_ids)
+                for event_id in event_ids:
+                    call_id = self.tool_use_call_id_by_event_id.get(event_id)
+                    if call_id:
+                        self.blocking_event_ids.add(call_id)
+                        self.pending_blocking_event_ids.add(call_id)
+            else:
+                self.clear_unmatched_pending_blockers()
             self.tool_uses_since_status.clear()
             return
         if event.type in (EVENT_TYPE_SESSION_STATUS_RUNNING, EVENT_TYPE_SESSION_STATUS_RESCHEDULED):
+            self.set_session_status("running", event)
             self.blocking_events_known = True
-            self.blocking_event_ids.clear()
-            self.tool_uses_since_status.clear()
+            self.clear_resolved_pending_blockers()
+        elif event.type in (EVENT_TYPE_SESSION_STATUS_TERMINATED, EVENT_TYPE_SESSION_DELETED):
+            self.set_session_status("terminated", event)
+            self.clear_pending_blockers()
+
+    def clear_resolved_pending_blockers(self) -> None:
+        for call_id, tool_event in self.tool_use_events.items():
+            if call_id not in self.pending_blocking_event_ids and (
+                not tool_event.id or tool_event.id not in self.pending_blocking_event_ids
+            ):
+                continue
+            self.pending_blocking_event_ids.discard(call_id)
+            if tool_event.id:
+                self.pending_blocking_event_ids.discard(tool_event.id)
+                self.tool_use_call_id_by_event_id.pop(tool_event.id, None)
+        self.blocking_event_ids.clear()
+        self.tool_uses_since_status.clear()
+
+    def clear_unmatched_pending_blockers(self) -> None:
+        matched = set()
+        for call_id, tool_event in self.tool_use_events.items():
+            if call_id in self.pending_blocking_event_ids or (
+                tool_event.id and tool_event.id in self.pending_blocking_event_ids
+            ):
+                matched.add(call_id)
+                if tool_event.id:
+                    matched.add(tool_event.id)
+        self.pending_blocking_event_ids.intersection_update(matched)
+
+    def clear_pending_blockers(self) -> None:
+        self.blocking_event_ids.clear()
+        self.pending_blocking_event_ids.clear()
+        self.tool_use_call_id_by_event_id.clear()
+        self.tool_uses_since_status.clear()
+
+    def set_session_status(self, status: str, event: Event) -> None:
+        if status == self.session_status:
+            return
+        previous = self.session_status or "unknown"
+        self.session_status = status
+        if status == "running":
+            self.last_business_event_at = time.monotonic()
+        self.last_progress_warning_at = 0.0
+        self.runner.options.logger.info(
+            "session status changed session_id=%s work_id=%s previous=%s current=%s event_type=%s stop_reason=%s",
+            self.runner.session_id,
+            self.runner.options.work_id,
+            previous,
+            status,
+            event.type,
+            event.stop_reason_type() if status == "idle" else "",
+        )
+
+    def maybe_log_no_progress(self) -> None:
+        if self.session_status != "running":
+            return
+        now = time.monotonic()
+        no_progress_seconds = now - self.last_business_event_at
+        if no_progress_seconds < STREAM_PROGRESS_WARN_SECONDS:
+            return
+        if self.last_progress_warning_at and now - self.last_progress_warning_at < STREAM_PROGRESS_WARN_SECONDS:
+            return
+        self.last_progress_warning_at = now
+        self.runner.options.logger.warning(
+            "session has no business progress session_id=%s work_id=%s status=%s "
+            "no_progress_seconds=%.1f events=%d stream_attempts=%d",
+            self.runner.session_id,
+            self.runner.options.work_id,
+            self.session_status,
+            no_progress_seconds,
+            self.event_count,
+            self.stream_attempts,
+        )
 
     def should_handle_tool_use(self, call_id: str) -> bool:
         if not self.blocking_events_known:
             return True
-        return call_id in self.blocking_event_ids or call_id in self.tool_uses_since_status
+        return self.is_blocking_tool_use(call_id) or call_id in self.tool_uses_since_status
+
+    def is_blocking_tool_use(self, call_id: str) -> bool:
+        if call_id in self.requires_action_fallback:
+            return True
+        # StopReason.EventIDs 里是 agent.tool_use 的事件 id，而 runner 内部以
+        # tool_use_id 作为 call id，两者不能直接互相查表。
+        if call_id in self.blocking_event_ids or call_id in self.pending_blocking_event_ids:
+            return True
+        event = self.tool_use_events.get(call_id)
+        return event is not None and (
+            event.id in self.blocking_event_ids or event.id in self.pending_blocking_event_ids
+        )
+
+    def reconcile_unmatched_requires_action(self) -> None:
+        if not self.blocking_events_known or not self.pending_blocking_event_ids:
+            return
+        for call_id, event in self.tool_use_events.items():
+            if call_id in self.pending_blocking_event_ids or (event.id and event.id in self.pending_blocking_event_ids):
+                return
+        candidates = []
+        for call_id, event in self.tool_use_events.items():
+            if self.is_answered(call_id) or call_id in self.scheduled:
+                continue
+            if not self.owns_tool(event, event.type == EVENT_TYPE_AGENT_CUSTOM_TOOL_USE):
+                continue
+            candidates.append(call_id)
+        if len(candidates) != 1:
+            return
+        call_id = candidates[0]
+        if call_id not in self.requires_action_fallback:
+            self.runner.options.logger.warning(
+                "using sole unresolved tool use for unmatched requires_action tool_use_id=%s",
+                call_id,
+            )
+        self.requires_action_fallback.add(call_id)
 
     def reconcile_recovered_results(self) -> None:
         if not self.blocking_events_known:
             return
         for call_id in list(self.recovered_results):
-            if call_id in self.blocking_event_ids and call_id in self.session_tool_uses:
+            if self.is_blocking_tool_use(call_id) and call_id in self.session_tool_uses:
                 self.recovered_results.discard(call_id)
                 continue
             if call_id in self.tool_uses_since_status:
@@ -763,7 +1005,7 @@ class _RunnerState:
             self.idle_armed_at = time.monotonic()
 
     def has_idle_blockers(self) -> bool:
-        return bool(self.pending_ask or self.pending_results or self.external_tools or self.scheduled)
+        return bool(self.pending_ask or self.external_tools or self.scheduled)
 
     def idle_expired(self) -> bool:
         max_idle = self.max_idle_seconds()

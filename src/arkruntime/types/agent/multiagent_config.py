@@ -6,24 +6,53 @@
 
 from __future__ import annotations
 
-from typing import List
+from typing import List, Optional
+
+from pydantic import model_validator
 
 from arkruntime._models import BaseModel
 
 from .agent_ref import AgentRef
+from .multiagent_subagents_config import MultiagentSubagentsConfig
 from .multiagent_type import MultiagentType
 
 
 class MultiagentConfig(BaseModel):
     """
-    多 Agent 协调拓扑。
+    多 Agent 协调拓扑。`type` 当前支持 `coordinator` 与
+    `multiagent_20261001`。
+
+    - `coordinator` 使用 `agents`；`subagents` 会被服务端忽略。
+    - `multiagent_20261001` 使用 `subagents`；非空 `agents` 返回 400。
+    - 拓扑迁移只允许 `coordinator` 或单 Agent 升级到
+    `multiagent_20261001`；反之返回 400。
+    - `subagents` 表示拓扑配置值；Update 的 presence / null patch 语义由
+    `MultiagentPatch` 单独表达。
     """
 
     type: MultiagentType
     """
     拓扑类型。
     """
-    agents: List[AgentRef]
+    agents: Optional[List[AgentRef]] = None
     """
-    下属 Agent 数组，1–20 项；深度限制为 1（被引用的 Agent 自身不能再有 `multiagent`）。
+    coordinator 的下属 Agent 数组，0–20 项；深度限制为 1。
+    `multiagent_20261001` 不支持该字段。
     """
+    subagents: Optional[MultiagentSubagentsConfig] = None
+    """
+    `multiagent_20261001` 的子代理配置。
+
+    Create 时必须提供。该属性不接受显式 `null`。
+    """
+
+    # ark-apis generated validation: dynamic multiagent subagents
+    @model_validator(mode="after")
+    def _validate_dynamic_subagents(self) -> "MultiagentConfig":
+        type_value = getattr(self.type, "value", self.type)
+        if type_value == "multiagent_20261001" and self.subagents is None:
+            raise ValueError(
+                'multiagent.subagents is required when multiagent.type is '
+                '"multiagent_20261001"'
+            )
+        return self

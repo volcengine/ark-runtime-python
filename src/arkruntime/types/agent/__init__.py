@@ -19,6 +19,10 @@ from .mcp_server_type import MCPServerType
 from .model_config import ModelConfig
 from .model_speed import ModelSpeed
 from .multiagent_config import MultiagentConfig
+from .multiagent_feature_type import MultiagentFeatureType
+from .multiagent_inline_agents_config import MultiagentInlineAgentsConfig
+from .multiagent_patch import MultiagentPatch
+from .multiagent_subagents_config import MultiagentSubagentsConfig
 from .multiagent_type import MultiagentType
 from .permission_policy import PermissionPolicy
 from .permission_policy_type import PermissionPolicyType
@@ -44,6 +48,10 @@ __all__ = [
     "ModelConfig",
     "ModelSpeed",
     "MultiagentConfig",
+    "MultiagentFeatureType",
+    "MultiagentInlineAgentsConfig",
+    "MultiagentPatch",
+    "MultiagentSubagentsConfig",
     "MultiagentType",
     "PermissionPolicy",
     "PermissionPolicyType",

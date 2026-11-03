@@ -13,7 +13,7 @@ from arkruntime._models import BaseModel
 from .agent_skill_ref import AgentSkillRef
 from .mcp_server import MCPServer
 from .model_config import ModelConfig
-from .multiagent_config import MultiagentConfig
+from .multiagent_patch import MultiagentPatch
 from .tag import Tag
 from .tool_item import ToolItem
 
@@ -65,9 +65,17 @@ class UpdateAgentRequest(BaseModel):
     """
     Skill 引用列表（整体替换）。
     """
-    multiagent: Optional[MultiagentConfig] = None
+    multiagent: Optional[MultiagentPatch] = None
     """
-    多 Agent 编排拓扑。
+    多 Agent 编排拓扑（patch）：顶层省略 = 不改，显式 `null` = 移除。
+    同为 multiagent_20261001 时，subagents 省略会保留当前配置；subagents
+    显式 `null` 会重置为默认配置。subagents 内层的 inline_agents /
+    predefined_agents 按字段是否显式出现合并，省略保留，显式 `null` 按各自
+    重置语义处理，predefined_agents 显式 `[]` 清空名册。coordinator 的 agents
+    传值时整体替换名册，省略等价于空名册。
+
+    生成器无法让所有语言在强类型模型中统一区分省略和显式 `null`；不能表达时
+    使用 raw HTTP/request-body escape hatch。
     """
     metadata: Optional[Dict[str, str]] = None
     """

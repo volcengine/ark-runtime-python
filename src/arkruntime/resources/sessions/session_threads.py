@@ -134,7 +134,10 @@ class SessionThreads(SyncAPIResource):
         client = self._client._client
         base = str(self._client._base_url).rstrip("/")
         url = f"{base}/sessions/{session_id}/threads/{thread_id}/stream"
-        headers = {"Accept": "text/event-stream", **(self._client.auth_headers or {})}
+        headers = {
+            **self._client.default_headers(),
+            "Accept": "text/event-stream",
+        }
         with client.stream("GET", url, headers=headers, timeout=timeout) as resp:
             _raise_for_stream_status(self, resp)
             event_name = ""
@@ -251,7 +254,10 @@ class AsyncSessionThreads(AsyncAPIResource):
         client = self._client._client
         base = str(self._client._base_url).rstrip("/")
         url = f"{base}/sessions/{session_id}/threads/{thread_id}/stream"
-        headers = {"Accept": "text/event-stream", **(self._client.auth_headers or {})}
+        headers = {
+            **self._client.default_headers(),
+            "Accept": "text/event-stream",
+        }
         async with client.stream("GET", url, headers=headers, timeout=timeout) as resp:
             await _araise_for_stream_status(self, resp)
             event_name = ""
