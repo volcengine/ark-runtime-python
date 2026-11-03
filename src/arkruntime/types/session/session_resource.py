@@ -10,6 +10,7 @@ from typing import Optional
 
 from arkruntime._models import BaseModel
 
+from .memory_store_instructions import MemoryStoreInstructions
 from .session_resource_access import SessionResourceAccess
 from .session_resource_type import SessionResourceType
 
@@ -43,6 +44,12 @@ class SessionResource(BaseModel):
     access: Optional[SessionResourceAccess] = None
     """
     `memory_store` 类型：访问权限。
+    """
+    instructions: Optional[MemoryStoreInstructions] = None
+    """
+    `memory_store` 类型：会话使用该记忆库时遵循的指导，最长 4096 个 Unicode 字符。
+    创建会话时可指定；省略、null 或空字符串均表示无使用指导，响应中省略空值。
+    不适用于其他资源类型；与 Agent 上下文压缩策略的摘要指令不同。
     """
     mount_path: Optional[str] = None
     """

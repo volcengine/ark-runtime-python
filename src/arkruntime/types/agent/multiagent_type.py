@@ -6,11 +6,13 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from enum import Enum
 
-from typing_extensions import TypeAliasType
 
-MultiagentType = TypeAliasType("MultiagentType", Literal["coordinator"])
-"""
-多 Agent 拓扑类型。
-"""
+class MultiagentType(str, Enum):
+    """
+    多 Agent 拓扑类型。
+    """
+
+    coordinator = "coordinator"
+    multiagent_20261001 = "multiagent_20261001"

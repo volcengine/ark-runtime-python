@@ -30,17 +30,17 @@ class AudioGenerationRequestParam(TypedDict, total=False):
 
     content: Required[List[ContentParam]]
 
-    dubbing_config: Optional[Optional[DubbingConfigParam]]
+    dubbing_config: Optional[DubbingConfigParam]
     """Required for dubbing; forbidden in reference generation and separation."""
 
-    output_format: Optional[Optional[OutputFormat]]
+    output_format: Optional[OutputFormat]
     """Output audio format. Omitted or null resolves to wav."""
 
-    audio_config: Optional[Optional[AudioConfigParam]]
+    audio_config: Optional[AudioConfigParam]
     """Optional output parameters. Defaults are applied by the service."""
 
-    include: Optional[Optional[List[Include]]]
+    include: Optional[List[Include]]
     """Additional artifacts; omitted/null/empty means none. video_url requires a video input. subtitles_source.* is only allowed for dubbing. Separation forbids a non-empty include."""
 
-    watermark: Optional[Optional[bool]]
+    watermark: Optional[bool]
     """Append an audible rhythm watermark at the end. Defaults to false. Only supported in the cn-beijing deployment region; overseas deployments reject true with InvalidParameter (param=watermark)."""

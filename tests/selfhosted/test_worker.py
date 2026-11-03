@@ -254,6 +254,39 @@ def test_worker_tool_timeout_overrides_tool_context(tmp_path) -> None:
     assert context.tool_timeout_seconds == 0.02
 
 
+def test_worker_passes_stream_configuration_and_initial_status(tmp_path, monkeypatch) -> None:
+    captured = {}
+
+    class Runner:
+        def __init__(self, _api, _session_id, options):
+            captured["options"] = options
+
+        def run(self):
+            return None
+
+    class API(_ActiveHeartbeatAPI):
+        def get_session(self, session_id):
+            return Session(id=session_id, raw={"status": "running"})
+
+    monkeypatch.setattr("arkruntime.selfhosted.worker.SessionToolRunner", Runner)
+    worker = EnvironmentWorker(
+        API(),
+        EnvironmentWorkerOptions(
+            environment_id="env-1",
+            workdir=str(tmp_path),
+            prefer_stream=False,
+            stream_timeout_seconds=12.5,
+        ),
+    )
+
+    worker.handle_item(HandleItemOptions(work_id="work-1", environment_id="env-1", session_id="session-1"))
+
+    options = captured["options"]
+    assert options.prefer_stream is False
+    assert options.stream_timeout_seconds == 12.5
+    assert options.initial_session_status == "running"
+
+
 @pytest.mark.parametrize("timeout", [None, 0, -1])
 def test_worker_nonpositive_tool_timeout_preserves_tool_context(tmp_path, timeout) -> None:
     worker = EnvironmentWorker(
@@ -279,6 +312,8 @@ def test_worker_options_preserve_legacy_positional_order() -> None:
     assert options.custom_tools is custom_tools
     assert options.logger is logger
     assert options.tool_timeout_seconds is None
+    assert options.prefer_stream is True
+    assert options.stream_timeout_seconds == 30.0
 
 
 def test_worker_uses_configured_workdir(tmp_path) -> None:

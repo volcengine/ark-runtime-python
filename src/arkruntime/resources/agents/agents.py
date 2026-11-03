@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import List, Optional
+from urllib.parse import quote
 
 import httpx
 
@@ -8,15 +9,21 @@ from ..._base_client import make_request_options
 from ..._managed_agents_serialize import dump_body
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._types import NOT_GIVEN, Body, Headers, NotGiven, Query
+
+# AUTOGEN-START create-imports
 from ...types.agent.agent import Agent
 from ...types.agent.agent_skill_ref import AgentSkillRef
+from ...types.agent.context_management_policies_param import ContextManagementPoliciesParam
 from ...types.agent.delete_agent_response import DeleteAgentResponse
 from ...types.agent.list_agents_response import ListAgentsResponse
 from ...types.agent.mcp_server import MCPServer
 from ...types.agent.model_config import ModelConfig
 from ...types.agent.multiagent_config import MultiagentConfig
+from ...types.agent.multiagent_patch import MultiagentPatch
 from ...types.agent.tag import Tag
 from ...types.agent.tool_item import ToolItem
+
+# AUTOGEN-END create-imports
 
 __all__ = ["Agents", "AsyncAgents"]
 
@@ -25,6 +32,7 @@ _PREFIX = "/agents"
 
 def _list_query(
     *,
+    include_archived: bool | NotGiven = NOT_GIVEN,
     limit=NOT_GIVEN,
     page=NOT_GIVEN,
     created_at_gte=NOT_GIVEN,
@@ -39,7 +47,17 @@ def _list_query(
     }.items():
         if v is not NOT_GIVEN and v is not None:
             q[k] = v
+    if include_archived is not NOT_GIVEN and include_archived is not None:
+        q["include_archived"] = include_archived
     return q
+
+
+def _validate_create_multiagent(
+    multiagent: MultiagentConfig | NotGiven | None,
+) -> MultiagentConfig | NotGiven | None:
+    if multiagent is NOT_GIVEN or multiagent is None:
+        return multiagent
+    return MultiagentConfig.model_validate(multiagent)
 
 
 class Agents(SyncAPIResource):
@@ -56,11 +74,15 @@ class Agents(SyncAPIResource):
         multiagent: Optional[MultiagentConfig] | NotGiven = NOT_GIVEN,
         metadata: Optional[dict] | NotGiven = NOT_GIVEN,
         tags: Optional[List[Tag]] | NotGiven = NOT_GIVEN,
+        # AUTOGEN-START create-kwargs
+        context_management: Optional[ContextManagementPoliciesParam] | NotGiven = NOT_GIVEN,
+        # AUTOGEN-END create-kwargs
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None = None,
     ) -> Agent:
+        multiagent = _validate_create_multiagent(multiagent)
         return self._post(
             _PREFIX,
             body=dump_body(
@@ -75,6 +97,9 @@ class Agents(SyncAPIResource):
                     "multiagent": multiagent,
                     "metadata": metadata,
                     "tags": tags,
+                    # AUTOGEN-START create-body
+                    "context_management": context_management,
+                    # AUTOGEN-END create-body
                 }
             ),
             options=make_request_options(
@@ -113,6 +138,7 @@ class Agents(SyncAPIResource):
     def list(
         self,
         *,
+        include_archived: bool | NotGiven = NOT_GIVEN,
         limit=NOT_GIVEN,
         page=NOT_GIVEN,
         created_at_gte=NOT_GIVEN,
@@ -126,6 +152,7 @@ class Agents(SyncAPIResource):
             _PREFIX,
             options=make_request_options(
                 query=_list_query(
+                    include_archived=include_archived,
                     limit=limit,
                     page=page,
                     created_at_gte=created_at_gte,
@@ -151,8 +178,11 @@ class Agents(SyncAPIResource):
         mcp_servers: Optional[List[MCPServer]] | NotGiven = NOT_GIVEN,
         tools: Optional[List[ToolItem]] | NotGiven = NOT_GIVEN,
         skills: Optional[List[AgentSkillRef]] | NotGiven = NOT_GIVEN,
-        multiagent: Optional[MultiagentConfig] | NotGiven = NOT_GIVEN,
+        multiagent: Optional[MultiagentPatch] | NotGiven = NOT_GIVEN,
         metadata: Optional[dict] | NotGiven = NOT_GIVEN,
+        # AUTOGEN-START update-kwargs
+        context_management: Optional[ContextManagementPoliciesParam] | NotGiven = NOT_GIVEN,
+        # AUTOGEN-END update-kwargs
         extra_headers=None,
         extra_query=None,
         extra_body=None,
@@ -174,6 +204,9 @@ class Agents(SyncAPIResource):
                     "skills": skills,
                     "multiagent": multiagent,
                     "metadata": metadata,
+                    # AUTOGEN-START update-body
+                    "context_management": context_management,
+                    # AUTOGEN-END update-body
                 }
             ),
             options=make_request_options(
@@ -221,6 +254,18 @@ class Agents(SyncAPIResource):
             cast_to=ListAgentsResponse,
         )
 
+    def archive(self, agent_id: str, *, extra_headers=None, extra_query=None, timeout=None) -> Agent:
+        """Archive this agent; the POST has no request body."""
+        if not agent_id:
+            raise ValueError("agent_id is required")
+        return self._post(
+            f"{_PREFIX}/{quote(agent_id, safe='')}/archive",
+            # Raw empty bytes bypass the client's default empty JSON object.
+            body=b"",  # type: ignore[arg-type]
+            options=make_request_options(extra_headers=extra_headers, extra_query=extra_query, timeout=timeout),
+            cast_to=Agent,
+        )
+
 
 class AsyncAgents(AsyncAPIResource):
     async def create(
@@ -236,11 +281,15 @@ class AsyncAgents(AsyncAPIResource):
         multiagent=NOT_GIVEN,
         metadata=NOT_GIVEN,
         tags=NOT_GIVEN,
+        # AUTOGEN-START create-kwargs
+        context_management: Optional[ContextManagementPoliciesParam] | NotGiven = NOT_GIVEN,
+        # AUTOGEN-END create-kwargs
         extra_headers=None,
         extra_query=None,
         extra_body=None,
         timeout=None,
     ) -> Agent:
+        multiagent = _validate_create_multiagent(multiagent)
         return await self._post(
             _PREFIX,
             body=dump_body(
@@ -255,6 +304,9 @@ class AsyncAgents(AsyncAPIResource):
                     "multiagent": multiagent,
                     "metadata": metadata,
                     "tags": tags,
+                    # AUTOGEN-START create-body
+                    "context_management": context_management,
+                    # AUTOGEN-END create-body
                 }
             ),
             options=make_request_options(
@@ -293,6 +345,7 @@ class AsyncAgents(AsyncAPIResource):
     async def list(
         self,
         *,
+        include_archived: bool | NotGiven = NOT_GIVEN,
         limit=NOT_GIVEN,
         page=NOT_GIVEN,
         created_at_gte=NOT_GIVEN,
@@ -306,6 +359,7 @@ class AsyncAgents(AsyncAPIResource):
             _PREFIX,
             options=make_request_options(
                 query=_list_query(
+                    include_archived=include_archived,
                     limit=limit,
                     page=page,
                     created_at_gte=created_at_gte,
@@ -333,6 +387,9 @@ class AsyncAgents(AsyncAPIResource):
         skills=NOT_GIVEN,
         multiagent=NOT_GIVEN,
         metadata=NOT_GIVEN,
+        # AUTOGEN-START update-kwargs
+        context_management: Optional[ContextManagementPoliciesParam] | NotGiven = NOT_GIVEN,
+        # AUTOGEN-END update-kwargs
         extra_headers=None,
         extra_query=None,
         extra_body=None,
@@ -354,6 +411,9 @@ class AsyncAgents(AsyncAPIResource):
                     "skills": skills,
                     "multiagent": multiagent,
                     "metadata": metadata,
+                    # AUTOGEN-START update-body
+                    "context_management": context_management,
+                    # AUTOGEN-END update-body
                 }
             ),
             options=make_request_options(
@@ -399,4 +459,16 @@ class AsyncAgents(AsyncAPIResource):
                 query=q, extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
             cast_to=ListAgentsResponse,
+        )
+
+    async def archive(self, agent_id: str, *, extra_headers=None, extra_query=None, timeout=None) -> Agent:
+        """Archive this agent; the POST has no request body."""
+        if not agent_id:
+            raise ValueError("agent_id is required")
+        return await self._post(
+            f"{_PREFIX}/{quote(agent_id, safe='')}/archive",
+            # Raw empty bytes bypass the client's default empty JSON object.
+            body=b"",  # type: ignore[arg-type]
+            options=make_request_options(extra_headers=extra_headers, extra_query=extra_query, timeout=timeout),
+            cast_to=Agent,
         )

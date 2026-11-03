@@ -6,6 +6,10 @@
 
 from __future__ import annotations
 
+from .agent_compact_threshold import AgentCompactThreshold
+from .agent_context_management_instructions import AgentContextManagementInstructions
+from .agent_context_management_policies import AgentContextManagementPolicies
+from .agent_context_management_policy import AgentContextManagementPolicy
 from .agent_identifier import AgentIdentifier
 from .agent_ref import AgentRef
 from .agent_with_upgrades import AgentWithUpgrades
@@ -93,6 +97,7 @@ from .managed_agents_user_tool_result_event_params import (
     ManagedAgentsUserToolResultEventParams,
 )
 from .managed_agents_video_block import ManagedAgentsVideoBlock
+from .memory_store_instructions import MemoryStoreInstructions
 from .model_overrides import ModelOverrides
 from .model_upgrades import ModelUpgrades
 from .override_token_limits import OverrideTokenLimits
@@ -119,6 +124,10 @@ from .url_video_source import UrlVideoSource
 from .video_source import VideoSource
 
 __all__ = [
+    "AgentCompactThreshold",
+    "AgentContextManagementInstructions",
+    "AgentContextManagementPolicies",
+    "AgentContextManagementPolicy",
     "AgentIdentifier",
     "AgentRef",
     "AgentWithUpgrades",
@@ -188,6 +197,7 @@ __all__ = [
     "ManagedAgentsUserToolConfirmationEventParams",
     "ManagedAgentsUserToolResultEventParams",
     "ManagedAgentsVideoBlock",
+    "MemoryStoreInstructions",
     "ModelOverrides",
     "ModelUpgrades",
     "OverrideTokenLimits",

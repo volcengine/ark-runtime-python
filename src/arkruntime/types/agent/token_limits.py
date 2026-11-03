@@ -14,6 +14,9 @@ from arkruntime._models import BaseModel
 class TokenLimits(BaseModel):
     """
     模型上下文与输入输出 token 限制。
+
+    三个字段保持 optional，是为了兼容 Ark provider 和旧数据；非 `ark` provider
+    必须提供 `token_limits`，且三个字段必须全部存在且为正数，由服务端校验。
     """
 
     context_window: Optional[int] = None

@@ -11,9 +11,10 @@ from typing import Dict, List, Optional
 from arkruntime._models import BaseModel
 
 from .agent_skill_ref import AgentSkillRef
+from .context_management_policies import ContextManagementPolicies
 from .mcp_server import MCPServer
 from .model_config import ModelConfig
-from .multiagent_config import MultiagentConfig
+from .multiagent_patch import MultiagentPatch
 from .tag import Tag
 from .tool_item import ToolItem
 
@@ -22,7 +23,7 @@ class UpdateAgentRequest(BaseModel):
     """
     更新 Agent 的请求体。语义：
     - 省略 = 保留
-    - 空字符串/null = 清空（仅 description / system / 数组类）
+    - 空字符串/null = 清空（仅 description / system / 既有数组类；context_management 的 null 表示保留）
     - `name` / `model` 不可清空
     - `metadata` 走 patch
     - `mcp_servers` / `tools` / `skills` 整体替换
@@ -65,9 +66,20 @@ class UpdateAgentRequest(BaseModel):
     """
     Skill 引用列表（整体替换）。
     """
-    multiagent: Optional[MultiagentConfig] = None
+    multiagent: Optional[MultiagentPatch] = None
     """
-    多 Agent 编排拓扑。
+    多 Agent 编排拓扑（patch）：顶层省略 = 不改，显式 `null` = 移除。
+
+    同为 multiagent_20261001 时，subagents 省略会保留当前配置；subagents
+    显式 `null` 会重置为默认配置。subagents 内层的 inline_agents /
+    predefined_agents 也按字段是否显式出现进行合并，省略保留，显式 `null`
+    按各自重置语义处理，predefined_agents 显式 `[]` 清空名册。coordinator
+    的 agents 传值时整体替换名册，省略等价于空名册。
+
+    服务端支持显式 `null`，但当前生成器无法让所有语言在强类型模型里统一区分
+    “省略”和“显式 null”。当前 SDK 能表达时按其 request API 发送；不能表达时
+    必须使用 raw HTTP/request-body escape hatch。需要补齐的 typed patch API
+    由各 SDK 独立交付，不在本契约 MR 中新增。
     """
     metadata: Optional[Dict[str, str]] = None
     """
@@ -76,4 +88,9 @@ class UpdateAgentRequest(BaseModel):
     tags: Optional[List[Tag]] = None
     """
     资源标签（整体替换）。
+    """
+    context_management: Optional[ContextManagementPolicies] = None
+    """
+    上下文管理策略（整体替换），最多一条 compaction。省略或 null 表示保留；
+    显式 [] 表示清除自定义策略，随后由运行时使用默认行为。
     """

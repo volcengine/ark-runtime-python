@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from .session_stream_shim import (
     ListSessionEventsResponse,
+    ManagedAgentsAgentCustomToolUseEvent,
     ManagedAgentsAgentMCPToolResultEvent,
     ManagedAgentsAgentMCPToolUseEvent,
     ManagedAgentsAgentMessageEvent,
@@ -51,6 +52,7 @@ from .session_stream_shim import (
 
 __all__ = [
     "ListSessionEventsResponse",
+    "ManagedAgentsAgentCustomToolUseEvent",
     "ManagedAgentsAgentMCPToolResultEvent",
     "ManagedAgentsAgentMCPToolUseEvent",
     "ManagedAgentsAgentMessageEvent",

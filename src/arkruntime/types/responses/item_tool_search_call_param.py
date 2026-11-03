@@ -24,7 +24,7 @@ class ItemToolSearchCallParam(TypedDict, total=False):
     arguments: Required[Dict[str, object]]
     """JSON object (not an encoded string). Completed calls contain a nonempty paths array; added streaming items initially contain {}."""
 
-    call_id: Optional[Optional[str]]
+    call_id: Optional[str]
     """Hosted search emits null. Replayed hosted history must omit this field or set it to null."""
 
     execution: Optional[ToolSearchExecution]

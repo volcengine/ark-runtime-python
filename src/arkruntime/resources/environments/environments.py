@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Optional
+from urllib.parse import quote
 
 import httpx
 
@@ -21,12 +22,14 @@ __all__ = ["Environments", "AsyncEnvironments"]
 _ENV_PREFIX = "/environments"
 
 
-def _list_query(*, limit=NOT_GIVEN, page=NOT_GIVEN) -> dict:
+def _list_query(*, include_archived: bool | NotGiven = NOT_GIVEN, limit=NOT_GIVEN, page=NOT_GIVEN) -> dict:
     q: dict = {}
     if limit is not NOT_GIVEN and limit is not None:
         q["limit"] = limit
     if page is not NOT_GIVEN and page is not None:
         q["page"] = page
+    if include_archived is not NOT_GIVEN and include_archived is not None:
+        q["include_archived"] = include_archived
     return q
 
 
@@ -73,12 +76,20 @@ class Environments(SyncAPIResource):
         )
 
     def list(
-        self, *, limit=NOT_GIVEN, page=NOT_GIVEN, extra_headers=None, extra_query=None, extra_body=None, timeout=None
+        self,
+        *,
+        include_archived: bool | NotGiven = NOT_GIVEN,
+        limit=NOT_GIVEN,
+        page=NOT_GIVEN,
+        extra_headers=None,
+        extra_query=None,
+        extra_body=None,
+        timeout=None,
     ) -> ListEnvironmentsResponse:
         return self._get(
             _ENV_PREFIX,
             options=make_request_options(
-                query=_list_query(limit=limit, page=page),
+                query=_list_query(include_archived=include_archived, limit=limit, page=page),
                 extra_headers=extra_headers,
                 extra_query=extra_query,
                 extra_body=extra_body,
@@ -127,6 +138,18 @@ class Environments(SyncAPIResource):
             cast_to=DeleteEnvironmentResponse,
         )
 
+    def archive(self, environment_id: str, *, extra_headers=None, extra_query=None, timeout=None) -> Environment:
+        """Archive this environment; the POST has no request body."""
+        if not environment_id:
+            raise ValueError("environment_id is required")
+        return self._post(
+            f"{_ENV_PREFIX}/{quote(environment_id, safe='')}/archive",
+            # Raw empty bytes bypass the client's default empty JSON object.
+            body=b"",  # type: ignore[arg-type]
+            options=make_request_options(extra_headers=extra_headers, extra_query=extra_query, timeout=timeout),
+            cast_to=Environment,
+        )
+
 
 class AsyncEnvironments(AsyncAPIResource):
     @cached_property
@@ -171,12 +194,20 @@ class AsyncEnvironments(AsyncAPIResource):
         )
 
     async def list(
-        self, *, limit=NOT_GIVEN, page=NOT_GIVEN, extra_headers=None, extra_query=None, extra_body=None, timeout=None
+        self,
+        *,
+        include_archived: bool | NotGiven = NOT_GIVEN,
+        limit=NOT_GIVEN,
+        page=NOT_GIVEN,
+        extra_headers=None,
+        extra_query=None,
+        extra_body=None,
+        timeout=None,
     ) -> ListEnvironmentsResponse:
         return await self._get(
             _ENV_PREFIX,
             options=make_request_options(
-                query=_list_query(limit=limit, page=page),
+                query=_list_query(include_archived=include_archived, limit=limit, page=page),
                 extra_headers=extra_headers,
                 extra_query=extra_query,
                 extra_body=extra_body,
@@ -223,4 +254,16 @@ class AsyncEnvironments(AsyncAPIResource):
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
             cast_to=DeleteEnvironmentResponse,
+        )
+
+    async def archive(self, environment_id: str, *, extra_headers=None, extra_query=None, timeout=None) -> Environment:
+        """Archive this environment; the POST has no request body."""
+        if not environment_id:
+            raise ValueError("environment_id is required")
+        return await self._post(
+            f"{_ENV_PREFIX}/{quote(environment_id, safe='')}/archive",
+            # Raw empty bytes bypass the client's default empty JSON object.
+            body=b"",  # type: ignore[arg-type]
+            options=make_request_options(extra_headers=extra_headers, extra_query=extra_query, timeout=timeout),
+            cast_to=Environment,
         )

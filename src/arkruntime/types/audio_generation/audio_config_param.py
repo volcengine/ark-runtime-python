@@ -16,14 +16,14 @@ from .sample_rate import SampleRate
 
 
 class AudioConfigParam(TypedDict, total=False):
-    sample_rate: Optional[Optional[SampleRate]]
+    sample_rate: Optional[SampleRate]
     """Defaults to 44100 for wav/mp3/pcm and 48000 for ogg_opus. ogg_opus only accepts 48000. Explicit zero is invalid."""
 
-    speech_rate: Optional[Optional[RateParam]]
+    speech_rate: Optional[RateParam]
     """Reference generation only. Default 0; -50 means 0.5x and 100 means 2x. Must be omitted (or null) for dubbing/separation, even when the value would be 0."""
 
-    loudness_rate: Optional[Optional[RateParam]]
+    loudness_rate: Optional[RateParam]
     """Reference generation only. Default 0; -50 means 0.5x and 100 means 2x. Must be omitted (or null) for dubbing/separation."""
 
-    pitch_rate: Optional[Optional[PitchRateParam]]
+    pitch_rate: Optional[PitchRateParam]
     """Reference generation only. Default 0. Must be omitted (or null) for dubbing/separation."""
