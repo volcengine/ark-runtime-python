@@ -55,6 +55,7 @@ from ._exceptions import (
     ArkAPITimeoutError,
 )
 from ._files import async_to_httpx_files, to_httpx_files
+from ._list_response import normalize_list_response
 from ._models import GenericModel, construct_type
 from ._qs import Querystring
 from ._request_options import ExtraRequestOptions, RequestOptions
@@ -474,6 +475,7 @@ class BaseClient(Generic[_HttpxClientT]):
         response: httpx.Response,
     ) -> ResponseT:
         request_id = response.headers.get(CLIENT_REQUEST_HEADER, "") if response else None
+        data = normalize_list_response(data, response, self._base_url.path)
         if data is None:
             return cast(ResponseT, None)
 
