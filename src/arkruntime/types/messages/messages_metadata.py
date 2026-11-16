@@ -14,5 +14,7 @@ from arkruntime._models import BaseModel
 class MessagesMetadata(BaseModel):
     user_id: Optional[str] = None
     """
-    An external identifier for the user associated with the request.
+    An external identifier for the user associated with the request. When
+    set to a JSON object string containing a non-empty `session_id` string,
+    `session_id` is used as a routing hint for prompt cache affinity.
     """

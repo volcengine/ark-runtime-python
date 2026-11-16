@@ -14,3 +14,7 @@ from arkruntime._models import BaseModel
 class ContentBlockStartContentBlockThinking(BaseModel):
     type: Literal["thinking"]
     thinking: Optional[str] = None
+    signature: Optional[str] = None
+    """
+    Initial signature placeholder. May be empty; signature deltas provide the final value.
+    """

@@ -11,6 +11,7 @@ from typing import List, Literal, Optional
 from arkruntime._models import BaseModel
 
 from .user_location import UserLocation
+from .web_search_filters import WebSearchFilters
 from .web_search_source import WebSearchSource
 
 
@@ -20,3 +21,13 @@ class WebSearchTool(BaseModel):
     user_location: Optional[UserLocation] = None
     sources: Optional[List[WebSearchSource]] = None
     max_keyword: Optional[int] = None
+    filters: Optional[WebSearchFilters] = None
+    """
+    Domain and authority filters. Only supported with the doubao source.
+    """
+    time_range: Optional[str] = None
+    """
+    Publish time range of the results: `OneDay`, `OneWeek`, `OneMonth`,
+    `OneYear`, or an inclusive date range `YYYY-MM-DD..YYYY-MM-DD`. Empty
+    means unrestricted. Only supported with the doubao source.
+    """

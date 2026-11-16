@@ -47,4 +47,7 @@ class ResponsesRequest(BaseModel):
     context_management: Optional[ContextManagement] = None
     session: Optional[Session] = None
     prompt_cache_key: Optional[str] = None
+    """
+    A routing hint for prompt cache affinity.
+    """
     safety_identifier: Optional[str] = None

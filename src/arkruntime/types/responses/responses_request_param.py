@@ -69,5 +69,6 @@ class ResponsesRequestParam(TypedDict, total=False):
     session: Optional[SessionParam]
 
     prompt_cache_key: Optional[str]
+    """A routing hint for prompt cache affinity."""
 
     safety_identifier: Optional[str]
