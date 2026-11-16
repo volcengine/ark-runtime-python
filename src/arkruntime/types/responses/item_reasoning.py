@@ -18,7 +18,7 @@ from .reasoning_summary_part import ReasoningSummaryPart
 class ItemReasoning(BaseModel):
     id: Optional[str] = None
     type: Literal["reasoning"]
-    status: ItemStatus
+    status: Optional[ItemStatus] = None
     summary: Optional[List[ReasoningSummaryPart]] = None
     content: Optional[List[OutputContentItem]] = None
     encrypted_content: Optional[str] = None

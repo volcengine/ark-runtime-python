@@ -115,6 +115,10 @@ class ChatCompletionRequest(BaseModel):
     """
     A unique identifier representing your end-user.
     """
+    prompt_cache_key: Optional[str] = None
+    """
+    A routing hint for prompt cache affinity.
+    """
     service_tier: Optional[RequestServiceTier] = None
     """
     The service tier to use for the request.

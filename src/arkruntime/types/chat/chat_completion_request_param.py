@@ -112,6 +112,9 @@ class ChatCompletionRequestParam(TypedDict, total=False):
     user: Optional[str]
     """A unique identifier representing your end-user."""
 
+    prompt_cache_key: Optional[str]
+    """A routing hint for prompt cache affinity."""
+
     service_tier: Optional[RequestServiceTier]
     """The service tier to use for the request."""
 

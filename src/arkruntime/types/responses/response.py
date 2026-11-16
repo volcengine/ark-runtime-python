@@ -56,3 +56,6 @@ class Response(BaseModel):
     session: Optional[Session] = None
     safety_identifier: Optional[str] = None
     prompt_cache_key: Optional[str] = None
+    """
+    A routing hint for prompt cache affinity.
+    """

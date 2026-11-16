@@ -20,7 +20,7 @@ class ItemReasoningParam(TypedDict, total=False):
 
     type: Required[Literal["reasoning"]]
 
-    status: Required[ItemStatus]
+    status: Optional[ItemStatus]
 
     summary: Optional[List[ReasoningSummaryPartParam]]
 

@@ -14,3 +14,4 @@ class WebSearchSource(str, Enum):
     douyin = "douyin"
     moji = "moji"
     search_engine = "search_engine"
+    doubao = "doubao"

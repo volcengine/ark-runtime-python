@@ -11,6 +11,7 @@ from typing import List, Literal, Optional
 from typing_extensions import Required, TypedDict
 
 from .user_location_param import UserLocationParam
+from .web_search_filters_param import WebSearchFiltersParam
 from .web_search_source import WebSearchSource
 
 
@@ -24,3 +25,13 @@ class WebSearchToolParam(TypedDict, total=False):
     sources: Optional[List[WebSearchSource]]
 
     max_keyword: Optional[int]
+
+    filters: Optional[WebSearchFiltersParam]
+    """Domain and authority filters. Only supported with the doubao source."""
+
+    time_range: Optional[str]
+    """
+    Publish time range of the results: `OneDay`, `OneWeek`, `OneMonth`,
+    `OneYear`, or an inclusive date range `YYYY-MM-DD..YYYY-MM-DD`. Empty
+    means unrestricted. Only supported with the doubao source.
+    """

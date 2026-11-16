@@ -264,6 +264,7 @@ from .typed_tool_choice import TypedToolChoice
 from .url_citation import UrlCitation
 from .user_location import UserLocation
 from .web_search_action import WebSearchAction
+from .web_search_filters import WebSearchFilters
 from .web_search_source import WebSearchSource
 from .web_search_tool import WebSearchTool
 
@@ -458,6 +459,7 @@ __all__ = [
     "UrlCitation",
     "UserLocation",
     "WebSearchAction",
+    "WebSearchFilters",
     "WebSearchSource",
     "WebSearchTool",
 ]
@@ -539,6 +541,7 @@ from .tool_uses_trigger_param import ToolUsesTriggerParam
 from .typed_tool_choice_param import TypedToolChoiceParam
 from .url_citation_param import UrlCitationParam
 from .user_location_param import UserLocationParam
+from .web_search_filters_param import WebSearchFiltersParam
 from .web_search_tool_param import WebSearchToolParam
 
 # Hand-written extras (preserved across regen via Makefile rsync --exclude=*_shim.py).
