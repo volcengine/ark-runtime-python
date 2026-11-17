@@ -17,11 +17,10 @@ class ListCredentialsResponse(BaseModel):
     """
     List Credentials 响应体。
 
-    注意：wire 上字段名是 `credentials`（与 vault / session 的 `data` 不一致），
-    以 stg 实际形态为准。
+    与 List Vaults 一致，本页数据在 `data` 键下；空集合返回 `[]`。
     """
 
-    credentials: List[Credential]
+    data: List[Credential]
     """
     本页 Credential 列表。
     """
