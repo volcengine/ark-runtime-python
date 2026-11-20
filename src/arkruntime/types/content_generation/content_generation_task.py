@@ -91,6 +91,18 @@ class ContentGenerationTask(BaseModel):
     """
     File format echoed back.
     """
+    file_format: Optional[str] = None
+    """
+    Output file format of a 3D generation task.
+    """
+    texture_resolution: Optional[str] = None
+    """
+    Texture resolution actually used by a 3D generation task.
+    """
+    priority: Optional[int] = None
+    """
+    Execution priority echoed back.
+    """
     service_tier: Optional[str] = None
     """
     Service tier the task was scheduled on.

@@ -19,3 +19,4 @@ class ContentType(str, Enum):
     video_url = "video_url"
     audio_url = "audio_url"
     draft_task = "draft_task"
+    file_url = "file_url"

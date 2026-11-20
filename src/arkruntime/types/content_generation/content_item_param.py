@@ -13,6 +13,7 @@ from typing_extensions import Required, TypedDict
 from .audio_url_param import AudioURLParam
 from .content_type import ContentType
 from .draft_task_param import DraftTaskParam
+from .file_url_param import FileURLParam
 from .image_url_param import ImageURLParam
 from .video_url_param import VideoURLParam
 
@@ -20,7 +21,8 @@ from .video_url_param import VideoURLParam
 class ContentItemParam(TypedDict, total=False):
     """
     One element of a generation request `content` list. Exactly one of
-    `text` / `image_url` / `video_url` / `audio_url` / `draft_task` must be
+    `text` / `image_url` / `video_url` / `audio_url` / `draft_task` /
+    `file_url` must be
     set, matching the value of `type`.
     """
 
@@ -42,5 +44,13 @@ class ContentItemParam(TypedDict, total=False):
     draft_task: Optional[DraftTaskParam]
     """Draft-task reference. Required when `type` is `draft_task`."""
 
+    file_url: Optional[FileURLParam]
+    """File content. Required when `type` is `file_url`."""
+
     role: Optional[str]
-    """Optional role tag (e.g. `first_frame`, `reference_image`)."""
+    """
+    Optional role tag (e.g. `first_frame`, `reference_image`). 3D generation
+    uses `front_view` / `back_view` / `left_view` / `right_view` /
+    `top_view` / `bottom_view` for images and `mesh_to_texture` for the mesh
+    file.
+    """

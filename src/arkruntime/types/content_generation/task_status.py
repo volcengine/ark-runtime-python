@@ -19,3 +19,4 @@ class TaskStatus(str, Enum):
     cancelled = "cancelled"
     succeeded = "succeeded"
     failed = "failed"
+    expired = "expired"

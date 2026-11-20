@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from typing import List
+from typing import List, Optional
 
 from arkruntime._models import BaseModel
 
@@ -14,11 +14,27 @@ from .content_generation_task import ContentGenerationTask
 
 
 class ListContentGenerationTasksResponse(BaseModel):
-    total: int
+    total: Optional[int] = None
     """
-    Total number of tasks matching the filter (across all pages).
+    Total number of tasks matching the filter (across all pages). Not returned by List V2.
     """
-    items: List[ContentGenerationTask]
+    items: Optional[List[ContentGenerationTask]] = None
     """
-    Page of tasks.
+    Page of tasks. Not returned by List V2.
+    """
+    data: Optional[List[ContentGenerationTask]] = None
+    """
+    List V2: page of tasks.
+    """
+    first_id: Optional[str] = None
+    """
+    List V2: id of the first task in `data`; null when `data` is empty.
+    """
+    last_id: Optional[str] = None
+    """
+    List V2: id of the last task in `data`; null when `data` is empty.
+    """
+    has_more: Optional[bool] = None
+    """
+    List V2: whether more tasks follow this page.
     """

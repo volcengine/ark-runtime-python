@@ -14,9 +14,11 @@ from .content_type import ContentType
 from .create_content_generation_task_request import CreateContentGenerationTaskRequest
 from .create_content_generation_task_response import CreateContentGenerationTaskResponse
 from .draft_task import DraftTask
+from .file_url import FileURL
 from .image_role import ImageRole
 from .image_url import ImageURL
 from .list_content_generation_tasks_response import ListContentGenerationTasksResponse
+from .list_order import ListOrder
 from .reasoning_effort import ReasoningEffort
 from .task_content import TaskContent
 from .task_error import TaskError
@@ -37,9 +39,11 @@ __all__ = [
     "CreateContentGenerationTaskRequest",
     "CreateContentGenerationTaskResponse",
     "DraftTask",
+    "FileURL",
     "ImageRole",
     "ImageURL",
     "ListContentGenerationTasksResponse",
+    "ListOrder",
     "ReasoningEffort",
     "TaskContent",
     "TaskError",
@@ -57,6 +61,7 @@ from .create_content_generation_task_request_param import (
     CreateContentGenerationTaskRequestParam,
 )
 from .draft_task_param import DraftTaskParam
+from .file_url_param import FileURLParam
 from .image_url_param import ImageURLParam
 from .tool_param import ToolParam
 from .tool_type_param import ToolTypeParam
