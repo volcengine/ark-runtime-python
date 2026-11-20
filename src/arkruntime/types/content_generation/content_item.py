@@ -13,6 +13,7 @@ from arkruntime._models import BaseModel
 from .audio_url import AudioURL
 from .content_type import ContentType
 from .draft_task import DraftTask
+from .file_url import FileURL
 from .image_url import ImageURL
 from .video_url import VideoURL
 
@@ -20,7 +21,8 @@ from .video_url import VideoURL
 class ContentItem(BaseModel):
     """
     One element of a generation request `content` list. Exactly one of
-    `text` / `image_url` / `video_url` / `audio_url` / `draft_task` must be
+    `text` / `image_url` / `video_url` / `audio_url` / `draft_task` /
+    `file_url` must be
     set, matching the value of `type`.
     """
 
@@ -48,7 +50,14 @@ class ContentItem(BaseModel):
     """
     Draft-task reference. Required when `type` is `draft_task`.
     """
+    file_url: Optional[FileURL] = None
+    """
+    File content. Required when `type` is `file_url`.
+    """
     role: Optional[str] = None
     """
-    Optional role tag (e.g. `first_frame`, `reference_image`).
+    Optional role tag (e.g. `first_frame`, `reference_image`). 3D generation
+    uses `front_view` / `back_view` / `left_view` / `right_view` /
+    `top_view` / `bottom_view` for images and `mesh_to_texture` for the mesh
+    file.
     """

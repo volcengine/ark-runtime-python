@@ -80,6 +80,36 @@ class CreateContentGenerationTaskRequest(BaseModel):
     """
     Output file format (e.g. `mp4`, `glb`).
     """
+    texture: Optional[bool] = None
+    """
+    3D generation with image-only input: `false` generates an untextured
+    mesh, omitted or `true` generates a textured model.
+    """
+    geometry_quality: Optional[str] = None
+    """
+    3D geometry quality tier: `low`, `medium`, `high`, `xhigh` or `ultra`.
+    """
+    geometry_detail: Optional[str] = None
+    """
+    3D surface detail: `smooth` or `micro`. Only valid when
+    `geometry_quality` is `high`, `xhigh` or `ultra`.
+    """
+    face: Optional[int] = None
+    """
+    Target face count of the 3D mesh, within the range of `geometry_quality`.
+    """
+    texture_resolution: Optional[str] = None
+    """
+    3D texture resolution: `4k` or `8k`.
+    """
+    preserve_uv: Optional[bool] = None
+    """
+    Keep the UV layout of the input mesh when texturing it.
+    """
+    priority: Optional[int] = None
+    """
+    Execution priority within the endpoint queue, 0-9; higher runs first.
+    """
     draft: Optional[bool] = None
     """
     Mark this task as a draft (cheaper, lower-quality).
