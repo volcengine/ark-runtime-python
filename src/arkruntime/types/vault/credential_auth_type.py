@@ -14,9 +14,11 @@ class CredentialAuthType(str, Enum):
     凭证 auth 类型。按值决定 `CredentialAuth` 里哪些字段被使用：
     - `mcp_oauth`：`mcp_server_url` + `access_token`(w) + 可选 `expires_at` / `refresh`
     - `static_bearer`：`mcp_server_url` + `token`(w)
+    - `mcp_static`：`mcp_server_url` + `token`(w)（省略注入配置时使用 bearer）
     - `environment_variable`：`secret_name` + `secret_value`(w) + `networking`
     """
 
     mcp_oauth = "mcp_oauth"
     static_bearer = "static_bearer"
     environment_variable = "environment_variable"
+    mcp_static = "mcp_static"

@@ -80,6 +80,11 @@ class CreateContentGenerationTaskRequest(BaseModel):
     """
     Output file format (e.g. `mp4`, `glb`).
     """
+    output_format: Optional[str] = None
+    """
+    Video container format (e.g. `mp4`, `mov`). Supported values depend on
+    the model; defaults to `mp4` when omitted.
+    """
     texture: Optional[bool] = None
     """
     3D generation with image-only input: `false` generates an untextured
@@ -117,6 +122,12 @@ class CreateContentGenerationTaskRequest(BaseModel):
     optimize_prompt: Optional[bool] = None
     """
     Run the prompt-optimization pass before generation.
+    """
+    omni_reference_task_type: Optional[str] = None
+    """
+    Multimodal-reference task type hint: `auto` (default), `reference`,
+    `edit` or `extend`. Supported models and task-specific constraints are
+    enforced server-side; requires prompt optimization to be enabled.
     """
     tools: Optional[List[Tool]] = None
     """

@@ -20,7 +20,12 @@ class CredentialAuth(BaseModel):
     凭证的鉴权细节。按 `type` 决定哪些字段非空：
     - `mcp_oauth` → `mcp_server_url` + `access_token`(write-only) + 可选 `expires_at` / `refresh`
     - `static_bearer` → `mcp_server_url` + `token`(write-only)
+    - `mcp_static` → `mcp_server_url` + `token`(write-only)（省略注入配置时使用 bearer）
     - `environment_variable` → `secret_name` + `secret_value`(write-only) + `networking`
+
+    `mcp_static` 与 `static_bearer` 并存，响应保留原始类型，不做归一化。
+    按类型的必填性由服务端校验；SDK 的可选字段不代表任意组合都合法。
+    为保持旧 SDK 公开对象结构，本模型暂不暴露 header/query 注入配置；完整配置支持另行提供。
 
     所有 secret 字段（`access_token` / `token` / `secret_value` / `refresh.refresh_token` /
     `token_endpoint_auth.client_secret`）都是 write-only：响应永不返回。
@@ -32,7 +37,7 @@ class CredentialAuth(BaseModel):
     """
     mcp_server_url: Optional[str] = None
     """
-    MCP server URL；`mcp_oauth` / `static_bearer` 用。
+    MCP server URL；`mcp_oauth` / `static_bearer` / `mcp_static` 用。
     """
     access_token: Optional[str] = None
     """
@@ -48,7 +53,7 @@ class CredentialAuth(BaseModel):
     """
     token: Optional[str] = None
     """
-    Bearer token；`static_bearer` 专用（write-only）。
+    静态密钥；`static_bearer` / `mcp_static` 创建时必填（write-only）。`mcp_static` 的 bearer 注入时不得包含 `Bearer ` 前缀。
     """
     secret_name: Optional[str] = None
     """

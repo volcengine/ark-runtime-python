@@ -95,6 +95,10 @@ class ContentGenerationTask(BaseModel):
     """
     Output file format of a 3D generation task.
     """
+    output_format: Optional[str] = None
+    """
+    Video container format actually used by the task (e.g. `mp4`, `mov`).
+    """
     texture_resolution: Optional[str] = None
     """
     Texture resolution actually used by a 3D generation task.
